@@ -1,0 +1,8 @@
+[workspace.package]
+name = "ltl-actus"
+version = "0.0.1"
+authors = [ "Quinn Dougherty <quinnd@riseup.net>" ]
+
+[workspace]
+members = [ "actus", "cli", "ltl" ]
+resolver = "2"

@@ -1,0 +1,10 @@
+[package]
+name = "actus"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+ltl = { path = "../ltl" }
+time = "0.3"
+serde = { version = "1.0", features = ["derive"] }

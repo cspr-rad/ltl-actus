@@ -1,0 +1,10 @@
+[package]
+name = "ltl"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+time = "0.3"
+prusti-contracts = "0.2"
+prusti-std = "0.2"

@@ -1,0 +1,42 @@
+name: check & build
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v9
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+      - name: System Info
+        run: |
+          uname -a
+          nix --version
+
+      - name: Format Check
+        if: matrix.os == 'ubuntu-latest'
+        run: nix flake build .#checks.x86_64-linux.treefmt
+
+      - name: Nix Flake Check
+        run: nix flake check -L --show-trace
+  check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v9
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+
+      - name: build
+        run: nix build -L --no-link --show-trace .#ltl_actus_cli-release
