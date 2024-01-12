@@ -2,6 +2,7 @@
 name = "ltl-actus"
 version = "0.0.1"
 authors = [ "Quinn Dougherty <quinnd@riseup.net>" ]
+repository = "github.com/cspr-rad/ltl-actus"
 
 [workspace]
 members = [ "actus", "cli", "ltl" ]
