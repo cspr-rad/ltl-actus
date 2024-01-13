@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use ltl::*;
+use ltl::{StateStore, TemporalProp, TermSet, Timestamp};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct Trace<T>(Vec(Timestamp, T));
+pub trait Event: Clone + PartialEq + Eq {}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct Trace<T>(Vec<(Timestamp, T)>);
 
 impl<T> Trace<T> {
     fn new() -> Self {
@@ -15,22 +17,33 @@ impl<T> Trace<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct Execution<T> {
-    start_date: Timestamp,
+#[derive(Debug, Clone, PartialEq)]
+struct Execution<T, E>
+where
+    T: TermSet,
+    E: Event,
+{
+    start_t: Timestamp,
     terms: T,
     contract: TemporalProp<T>,
     store: StateStore<T>,
 }
 
-impl<T> Execution<T> {
-    fn new(terms: T) -> Self {
+impl<T, E> Execution<T, E>
+where
+    T: TermSet,
+    E: Event,
+{
+    fn new(terms: T, contract: TemporalProp<T>, start_t: Timestamp) -> Self {
         Execution {
+            start_t,
             terms,
+            contract,
             store: StateStore::new(),
         }
     }
 
+    /** The execution has multiple counterparties. */
     pub fn run(&mut self) -> Trace<T> {
         let mut trace = Trace::new();
         // dummy

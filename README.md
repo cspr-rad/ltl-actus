@@ -5,5 +5,5 @@ The [algorithmic contract types unified standard](https://actusfrf.org) executed
 ## Example: Execution trace of a loan
 
 ``` sh
-nix run .#ltl_actus_cli-release -- exec --path ./tests/examples/loan-1.toml
+nix run .#ltl_actus_cli-release -- exec --path ./examples/loan-1.toml
 ```

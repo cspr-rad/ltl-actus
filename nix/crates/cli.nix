@@ -1,3 +1,5 @@
 { pkgs, config }:
 
-{ }
+{
+  checkProfile = "release";
+}

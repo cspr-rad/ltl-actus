@@ -1,328 +1,322 @@
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
-fn filter_hashmap_by_key<K, V>(map: &HashMap<K, V>, predicate: impl Fn(&K) -> bool) -> HashMap<K, V>
-where
-    K: Clone + Eq + std::hash::Hash,
-    V: Clone,
-{
-    map.iter()
-        .filter(|(&ref key, _)| predicate(&key))
-        .map(|(key, value)| (key.clone(), value.clone()))
-        .collect()
+#[derive(Debug, Eq, Hash, PartialEq, Ord, PartialOrd, Clone, Copy)]
+pub struct Timestamp(OffsetDateTime);
+
+impl Timestamp {
+    pub fn new(x: Option<OffsetDateTime>) -> Self {
+        match x {
+            Some(t) => Timestamp(t),
+            None => Timestamp(OffsetDateTime::now_utc()),
+        }
+    }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Prop<T: Clone + PartialEq> {
-    True,
-    False,
+pub trait TermSet: Clone + PartialEq + Eq + std::hash::Hash {}
+
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
+pub enum Prop<T>
+where
+    T: TermSet,
+{
     Var(T),
     Not(Box<Prop<T>>),
     Or(Box<Prop<T>>, Box<Prop<T>>),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Tick(usize);
-
+/** TrueWhen represents the interval in which a proposition is true.
+ *
+ * When `end_t` is `None`, it means that it's true forever into the future.
+ * */
 #[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Clone, Copy)]
-pub struct Timestamp(OffsetDateTime);
-
-#[derive(Debug, Clone)]
-pub struct StateStore<T: Clone + PartialEq> {
-    states: HashMap<Timestamp, Vec<Prop<T>>>,
-    current_t: Timestamp,
+pub struct TrueWhen {
+    start_t: Timestamp,
+    end_t: Option<Timestamp>,
 }
 
-/*
-impl<T: Clone + PartialEq> Prop<T> {
-    pub fn eval(&self, state: &StateStore<T>) -> bool {
-        match self {
-            Prop::True => true,
-            Prop::False => false,
-            Prop::Var(x) => state.check_always(&Prop::Var(x)),
-            Prop::Not(p) => !p.eval(state),
-            Prop::Or(p, q) => p.eval(state) || q.eval(state),
+impl TrueWhen {
+    fn new(start_t: Timestamp, end_t: Option<Timestamp>) -> Self {
+        TrueWhen { start_t, end_t }
+    }
+
+    fn contains(&self, timestamp: &Timestamp) -> bool {
+        match self.end_t {
+            Some(end_t) => *timestamp >= self.start_t && *timestamp <= end_t,
+            None => *timestamp >= self.start_t,
         }
     }
 }
-*/
 
-impl<T: Clone + PartialEq> PartialEq for StateStore<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.current_t == other.current_t
-            && self
-                .states
-                .keys()
-                .all(|k| self.states.get(k) == other.states.get(k))
-    }
-}
-
-impl<T: Clone + PartialEq> StateStore<T> {
-    pub fn new() -> StateStore<T> {
-        StateStore {
-            states: HashMap::new(),
-            current_t: Timestamp(OffsetDateTime::now_utc()),
-        }
-    }
-
-    pub fn add_state(&mut self, t: Timestamp, p: Prop<T>) {
-        let v = self.states.entry(t).or_insert_with(|| Vec::new());
-        v.push(p);
-    }
-
-    pub fn get_state(&self, t: Timestamp) -> Option<&Vec<Prop<T>>> {
-        self.states.get(&t)
-    }
-
-    pub fn update_current_t(&mut self, t: Timestamp) {
-        self.current_t = t;
-    }
-
-    pub fn future_states(&self) -> HashMap<Timestamp, Vec<Prop<T>>> {
-        filter_hashmap_by_key(&self.states, |&t| t >= self.current_t)
-    }
-
-    pub fn check_always(&self, prop: &Prop<T>) -> bool {
-        self.future_states()
-            .values()
-            .all(|props| props.contains(prop))
-    }
-
-    pub fn check_eventually(&self, p: &Prop<T>) -> bool {
-        self.future_states().values().any(|props| props.contains(p))
-    }
-
-    pub fn check_release(&self, psi: &Prop<T>, phi: &Prop<T>) -> bool {
-        let binding = self.future_states();
-        let mut timestamps = binding
-            .iter()
-            .map(|(&t, props)| (t, props.contains(psi), props.contains(phi)));
-
-        let (psi_becomes_true_at, phi_always_true_until_psi) = timestamps
-            .clone() // Clone the iterator to use it twice
-            .take_while(|&(_, psi_true, _)| !psi_true)
-            .fold((false, true), |(_, phi_always_true), (_, _, phi_true)| {
-                (true, phi_always_true && phi_true)
-            });
-
-        // If ψ becomes true, φ must have been true up to that point
-        // If ψ never becomes true, φ must be true at all timestamps
-        psi_becomes_true_at && phi_always_true_until_psi
-            || !psi_becomes_true_at && timestamps.all(|(_, _, phi_true)| phi_true)
-    }
-
-    pub fn check_until(&self, phi: &Prop<T>, psi: &Prop<T>) -> bool {
-        let binding = self.future_states();
-        let timestamps = binding
-            .iter()
-            .map(|(_, props)| (props.contains(phi), props.contains(psi)));
-
-        let mut psi_not_found = true;
-        timestamps
-            .take_while(|&(_, psi_true)| {
-                psi_not_found = !psi_true;
-                psi_not_found // Continue until psi is found
-            })
-            .all(|(phi_true, _)| phi_true)
-            && !psi_not_found
-    }
-
-    pub fn state(&self) -> &HashMap<Timestamp, Vec<Prop<T>>> {
-        &self.states
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum TemporalProp<T: Clone + PartialEq> {
-    Term(Prop<T>, Timestamp),
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+pub enum TemporalProp<T>
+where
+    T: TermSet,
+{
+    Term(Prop<T>),
     Always(Box<TemporalProp<T>>),
     Eventually(Box<TemporalProp<T>>),
     Release(Box<TemporalProp<T>>, Box<TemporalProp<T>>),
     Until(Box<TemporalProp<T>>, Box<TemporalProp<T>>),
 }
 
-pub fn drop_timestamp<T: Clone + PartialEq>(x: &TemporalProp<T>) -> Prop<T> {
-    match x {
-        TemporalProp::Term(b, _) => b.clone(),
-        TemporalProp::Always(p) => drop_timestamp(&p).clone(),
-        TemporalProp::Eventually(p) => drop_timestamp(&p).clone(),
-        TemporalProp::Release(p, q) => Prop::Or(
-            Box::new(drop_timestamp(&p).clone()),
-            Box::new(drop_timestamp(&q).clone()),
-        ),
-        TemporalProp::Until(p, q) => Prop::Or(
-            Box::new(drop_timestamp(&p).clone()),
-            Box::new(drop_timestamp(&q).clone()),
-        ),
+#[derive(Debug, Clone)]
+pub struct StateStore<T>
+where
+    T: TermSet,
+{
+    states: HashMap<Prop<T>, Vec<TrueWhen>>,
+}
+
+impl<T> StateStore<T>
+where
+    T: TermSet,
+{
+    pub fn new() -> Self {
+        StateStore {
+            states: HashMap::new(),
+        }
+    }
+
+    fn add_state(&mut self, prop: Prop<T>, interval: TrueWhen) {
+        self.states
+            .entry(prop)
+            .or_insert_with(Vec::new)
+            .push(interval);
+    }
+
+    fn is_true_at(&self, prop: &Prop<T>, timestamp: &Timestamp) -> bool {
+        self.states.get(prop).map_or(false, |intervals| {
+            intervals
+                .iter()
+                .any(|interval| interval.contains(timestamp))
+        })
+    }
+
+    fn check_always(&self, prop: &Prop<T>, current_t: Timestamp) -> bool {
+        self.states.get(prop).map_or(false, |intervals| {
+            intervals.iter().any(|interval| {
+                // Check if the interval is ongoing (end_t is None or in the future)
+                // and started at or before the current time.
+                interval.start_t <= current_t
+                    && (interval.end_t.is_none() || interval.end_t.unwrap() > current_t)
+            })
+        })
+    }
+
+    fn check_eventually(&self, prop: &Prop<T>, current_t: Timestamp) -> bool {
+        self.states.get(prop).map_or(false, |intervals| {
+            intervals
+                .iter()
+                .all(|interval| (interval.end_t.is_none() || interval.end_t.unwrap() > current_t))
+        })
+    }
+
+    /// TODO: refactor for overlapping intervals
+    fn check_release(&self, phi: &Prop<T>, psi: &Prop<T>, current_t: Timestamp) -> bool {
+        let phi_intervals = self.states.get(phi).unwrap_or(&Vec::new()).clone();
+        let psi_intervals = self.states.get(psi).unwrap_or(&Vec::new()).clone();
+
+        // If ψ is never true, φ must always be true.
+        if psi_intervals.is_empty() {
+            return self.check_always(phi, current_t);
+        }
+
+        // Find the first interval where ψ is true
+        let first_psi_true = psi_intervals
+            .iter()
+            .filter(|interval| interval.start_t <= current_t)
+            .min_by_key(|interval| interval.start_t);
+
+        match first_psi_true {
+            Some(first_psi_interval) => {
+                // φ must be true for all times before and including the first ψ true interval
+                phi_intervals.iter().any(|interval| {
+                    interval.start_t <= current_t
+                        && interval.end_t.unwrap_or(Timestamp(
+                            OffsetDateTime::from_unix_timestamp(i64::MAX)
+                                .expect("max timestamp panicked"),
+                        )) >= first_psi_interval.start_t
+                })
+            }
+            None => false, // If there's no ψ interval starting before current_t, the condition is not satisfied
+        }
+    }
+
+    /// TODO: refactor for overlapping intervals
+    fn check_until(&self, phi: &Prop<T>, psi: &Prop<T>, current_t: Timestamp) -> bool {
+        let phi_intervals = self.states.get(phi).unwrap_or(&Vec::new()).clone();
+        let psi_intervals = self.states.get(psi).unwrap_or(&Vec::new()).clone();
+
+        // Find the earliest interval where φ is true after the current timestamp
+        let first_phi_true = phi_intervals
+            .iter()
+            .filter(|interval| interval.start_t >= current_t)
+            .min_by_key(|interval| interval.start_t);
+
+        match first_phi_true {
+            Some(first_phi_interval) => {
+                // Check if ψ is true continuously from current_t until the start of first_phi_interval
+                let mut last_psi_end = current_t;
+                for interval in psi_intervals.iter() {
+                    if interval.start_t > last_psi_end {
+                        // Found a gap where ψ is not true
+                        return false;
+                    }
+                    match interval.end_t {
+                        Some(end_t) => {
+                            if end_t >= first_phi_interval.start_t {
+                                // ψ holds continuously until φ becomes true
+                                return true;
+                            }
+                            last_psi_end = end_t;
+                        }
+                        None => {
+                            // ψ holds continuously until the end of time
+                            return true;
+                        }
+                    }
+                }
+                false // ψ does not hold continuously until φ
+            }
+            None => {
+                // If φ never becomes true, check if ψ is always true from current_t
+                self.check_always(psi, current_t)
+            }
+        }
     }
 }
 
-pub fn apply_modal<T: Clone + PartialEq>(
-    f: TemporalProp<T>,
-    store: &StateStore<T>, // Add reference to StateStore
-) -> TemporalProp<T> {
-    match f {
-        TemporalProp::Term(p, t) => unreachable!(),
-        TemporalProp::Always(p) => {
-            match *p {
-                TemporalProp::Term(p, t) => {
-                    // Implement logic considering all timestamps in the state store
-                    if store.check_always(&p) {
-                        return TemporalProp::Term(Prop::True, store.current_t); // If true for all timestamps
-                    } else {
-                        return TemporalProp::Term(Prop::False, store.current_t);
-                        // If not true for all timestamps
-                    }
-                }
-                TemporalProp::Always(p) => apply_modal(*p, store),
-                TemporalProp::Eventually(p) => apply_modal(*p, store),
-                TemporalProp::Release(p, q) => TemporalProp::Release(
-                    Box::new(apply_modal(*p, store)),
-                    Box::new(apply_modal(*q, store)),
-                ),
-                TemporalProp::Until(p, q) => TemporalProp::Until(
-                    Box::new(apply_modal(*p, store)),
-                    Box::new(apply_modal(*q, store)),
-                ),
-            }
+impl<T> PartialEq for StateStore<T>
+where
+    T: TermSet,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.states
+            .keys()
+            .all(|k| self.states.get(k) == other.states.get(k))
+    }
+}
+
+impl<T> Prop<T>
+where
+    T: TermSet,
+{
+    pub fn new(x: T) -> Prop<T> {
+        Prop::Var(x)
+    }
+
+    pub fn eval(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+        match self {
+            Prop::Var(_) => state.is_true_at(self, current_t),
+            Prop::Not(p) => !p.eval(state, current_t),
+            Prop::Or(p, q) => p.eval(state, current_t) || q.eval(state, current_t),
         }
-        TemporalProp::Eventually(p) => {
-            match *p {
-                TemporalProp::Term(p, _) => {
-                    // Implement logic considering all timestamps in the state store
-                    if store.check_eventually(&p) {
-                        TemporalProp::Term(Prop::True, store.current_t) // If true for some timestamp
-                    } else {
-                        TemporalProp::Term(Prop::False, store.current_t) // If not true for some timestamp
-                    }
-                }
-                TemporalProp::Always(p) => apply_modal(*p, store),
-                TemporalProp::Eventually(p) => apply_modal(*p, store),
-                TemporalProp::Release(p, q) => TemporalProp::Release(
-                    Box::new(apply_modal(*p, store)),
-                    Box::new(apply_modal(*q, store)),
-                ),
-                TemporalProp::Until(p, q) => TemporalProp::Until(
-                    Box::new(apply_modal(*p, store)),
-                    Box::new(apply_modal(*q, store)),
-                ),
-            }
+    }
+}
+
+impl<T> TemporalProp<T>
+where
+    T: TermSet,
+{
+    pub fn new(p: Prop<T>) -> TemporalProp<T> {
+        TemporalProp::Term(p)
+    }
+    pub fn unlift_prop(&self) -> Option<Prop<T>> {
+        match self {
+            TemporalProp::Term(p) => Some(p.clone()),
+            _ => None,
         }
-        _ => todo!(), //    TemporalProp::Release(p, q) => {
-                      //        // Logic for Release operator
-                      //        match (*p, *q) {
-                      //            (TemporalProp::Term(p1, tp), q1) => {
-                      //                // Implement logic considering all timestamps in the state store
-                      //                if store.check_release(&p1, &drop_timestamp(&q1)) {
-                      //                    TemporalProp::Term(Prop::True, store.current_t) // If true for some timestamp
-                      //                } else {
-                      //                    TemporalProp::Term(Prop::False, store.current_t) // If not true for some timestamp
-                      //                }
-                      //            }
-                      //            (p1, TemporalProp::Term(q1, tq)) => {
-                      //                if store.check_release(&drop_timestamp(&p1), &q1) {
-                      //                    TemporalProp::Term(Prop::True, store.current_t) // If true for some timestamp
-                      //                } else {
-                      //                    TemporalProp::Term(Prop::False, store.current_t) // If not true for some timestamp
-                      //                }
-                      //            }
-                      //        }
-                      //    }
-                      //    TemporalProp::Until(p, q) => {
-                      //        // Logic for Until operator
-                      //        todo!()
-                      //    } // ... other cases ...
+    }
+    pub fn eval(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+        match self {
+            TemporalProp::Term(p) => p.eval(state, current_t),
+            TemporalProp::Always(tp) => match &**tp {
+                TemporalProp::Term(x) => state.check_always(&x, *current_t),
+                _ => tp.eval(state, current_t),
+            },
+            TemporalProp::Eventually(tp) => match &**tp {
+                TemporalProp::Term(x) => state.check_eventually(&x, *current_t),
+                _ => tp.eval(state, current_t),
+            },
+            TemporalProp::Release(_tp, _tq) => todo!(),
+            // match (&**tp, &**tq) {
+            //    (TemporalProp::Term(x), _) => state.check_release(&x, &**tq, *current_t),
+            //    (_, TemporalProp::Term(y)) => state.check_release(&**tp, &y, *current_t),
+            //    (_, _) => tp.eval(state, current_t) && tq.eval(state, current_t),
+            //},
+            TemporalProp::Until(_tp, _tq) => todo!(),
+        }
     }
 }
 
 /*
  * helpers
  */
-pub fn tt<T: Clone + PartialEq>(t: Timestamp) -> TemporalProp<T> {
-    TemporalProp::<T>::Term(Prop::<T>::True, t)
+pub fn tt<T: TermSet>(x: T) -> TemporalProp<T> {
+    TemporalProp::<T>::Term(Prop::<T>::Or(
+        Box::new(Prop::<T>::Var(x.clone())),
+        Box::new(Prop::<T>::Var(x.clone())),
+    ))
 }
 
-pub fn ff<T: Clone + PartialEq>(t: Timestamp) -> TemporalProp<T> {
-    TemporalProp::<T>::Term(Prop::<T>::False, t)
+pub fn ff<T: TermSet>(x: T) -> TemporalProp<T> {
+    TemporalProp::<T>::Term(Prop::<T>::Not(Box::new(tt(x).unlift_prop().unwrap())))
 }
 
-// maybe we'll do these.
-// pub fn timed_var<T>(t: Timestamp) -> impl Fn(T) -> TemporalProp<T> {
-//    move |x| TemporalProp::<T>::Term(Prop::<T>::Var(x), t)
-//}
-
-pub fn var<T: Clone + PartialEq>(x: T, t: Timestamp) -> TemporalProp<T> {
-    TemporalProp::<T>::Term(Prop::<T>::Var(x), t)
+pub fn var<T: TermSet>(x: T) -> TemporalProp<T> {
+    TemporalProp::<T>::Term(Prop::<T>::Var(x))
 }
 
-pub fn not<T: Clone + PartialEq>(p: &TemporalProp<T>, t: Timestamp) -> TemporalProp<T> {
-    TemporalProp::<T>::Term(Prop::<T>::Not(Box::new(drop_timestamp(&p).clone())), t)
+pub fn not<T: TermSet>(p: &TemporalProp<T>) -> TemporalProp<T> {
+    TemporalProp::<T>::Term(Prop::<T>::Not(Box::new(p.unlift_prop().unwrap())))
 }
 
-pub fn or<T: Clone + PartialEq>(
-    p: &TemporalProp<T>,
-    q: &TemporalProp<T>,
-    t: Timestamp,
-) -> TemporalProp<T> {
-    TemporalProp::<T>::Term(
-        Prop::<T>::Or(
-            Box::new(drop_timestamp(&p).clone()),
-            Box::new(drop_timestamp(&q).clone()),
-        ),
-        t,
-    )
+pub fn or<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
+    TemporalProp::<T>::Term(Prop::<T>::Or(
+        Box::new(p.unlift_prop().unwrap()),
+        Box::new(q.unlift_prop().unwrap()),
+    ))
 }
 
-pub fn and<T: Clone + PartialEq>(
-    p: &TemporalProp<T>,
-    q: &TemporalProp<T>,
-    t: Timestamp,
-) -> TemporalProp<T> {
-    not(&or(&not(p, t), &not(q, t), t), t)
+pub fn and<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
+    not(&or(&not(p), &not(q)))
 }
 
-pub fn implies<T: Clone + PartialEq>(
-    p: &TemporalProp<T>,
-    q: &TemporalProp<T>,
-    t: Timestamp,
-) -> TemporalProp<T> {
-    or(&not(p, t), q, t)
+pub fn implies<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
+    or(&not(p), q)
 }
 
-pub fn iff<T: Clone + PartialEq>(
-    p: &TemporalProp<T>,
-    q: &TemporalProp<T>,
-    t: Timestamp,
-) -> TemporalProp<T> {
-    and(&implies(p, q, t), &implies(q, p, t), t)
+pub fn iff<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
+    and(&implies(p, q), &implies(q, p))
 }
 
-pub fn always<T: Clone + PartialEq>(p: TemporalProp<T>) -> TemporalProp<T> {
+pub fn always<T: TermSet>(p: TemporalProp<T>) -> TemporalProp<T> {
     TemporalProp::<T>::Always(Box::new(p))
 }
 
-pub fn eventually<T: Clone + PartialEq>(p: TemporalProp<T>) -> TemporalProp<T> {
+pub fn eventually<T: TermSet>(p: TemporalProp<T>) -> TemporalProp<T> {
     TemporalProp::<T>::Eventually(Box::new(p))
 }
 
-pub fn release<T: Clone + PartialEq>(p: TemporalProp<T>, q: TemporalProp<T>) -> TemporalProp<T> {
+pub fn release<T: TermSet>(p: TemporalProp<T>, q: TemporalProp<T>) -> TemporalProp<T> {
     TemporalProp::<T>::Release(Box::new(p), Box::new(q))
+}
+
+pub fn until<T: TermSet>(p: TemporalProp<T>, q: TemporalProp<T>) -> TemporalProp<T> {
+    TemporalProp::<T>::Until(Box::new(p), Box::new(q))
 }
 
 /*
  * Tests
  */
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
+        let result = 2 + 2;
         assert_eq!(result, 4);
     }
 }

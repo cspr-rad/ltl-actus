@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "beamer-theme-serokell": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1601722979,
+        "narHash": "sha256-Kp4tNZ1iZ+Qw+YuCvHAefg3EokygD4W76iqtd74t5lg=",
+        "owner": "serokell",
+        "repo": "beamer-theme-serokell",
+        "rev": "82168735f3da769ae8e0c9db3791656c34e5ee08",
+        "type": "github"
+      },
+      "original": {
+        "owner": "serokell",
+        "repo": "beamer-theme-serokell",
+        "type": "github"
+      }
+    },
     "crane": {
       "flake": false,
       "locked": {
@@ -38,6 +54,20 @@
         "owner": "nix-community",
         "repo": "dream2nix",
         "type": "github"
+      }
+    },
+    "flake-utils": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "id": "flake-utils",
+        "type": "indirect"
       }
     },
     "fmt": {
@@ -99,6 +129,27 @@
       "original": {
         "owner": "yusdacra",
         "repo": "nix-cargo-integration",
+        "type": "github"
+      }
+    },
+    "nix-pandoc": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1669659805,
+        "narHash": "sha256-8Kzx+MJY0YjLAu5pt/DhFNMN+PybQZW2Jqe9lr23SQA=",
+        "owner": "serokell",
+        "repo": "nix-pandoc",
+        "rev": "8e8c13e59ad40e28c1d91b2bc532e3125ff6de49",
+        "type": "github"
+      },
+      "original": {
+        "owner": "serokell",
+        "repo": "nix-pandoc",
         "type": "github"
       }
     },
@@ -216,8 +267,10 @@
     },
     "root": {
       "inputs": {
+        "beamer-theme-serokell": "beamer-theme-serokell",
         "fmt": "fmt",
         "nci": "nci",
+        "nix-pandoc": "nix-pandoc",
         "nixpkgs": "nixpkgs",
         "parts": "parts_2"
       }

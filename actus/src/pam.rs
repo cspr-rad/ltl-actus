@@ -1,27 +1,44 @@
 extern crate ltl;
 
+use fpdec::{Dec, Decimal};
 use serde::Deserialize;
-use time::{Duration, OffsetDateTime};
+// use time::{Duration, PrimitiveDateTime};
 
 use ltl::*;
 
-// use self::exec::*;
+use crate::exec::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize, Eq, Hash)]
 pub struct PamTerms {
-    principal: f64,
-    interest_rate: f64,
+    principal: Decimal,
+    interest_rate: Decimal,
     months: usize,
 }
 
+pub struct PamEvent {
+    payment: Decimal,
+}
+
 impl PamTerms {
-    fn new(principal: f64, interest_rate: f64, months: usize) -> Self {
+    fn new(principal: Decimal, interest_rate: Decimal, months: usize) -> Self {
         PamTerms {
             principal,
             interest_rate,
             months,
         }
     }
+
+    // fn monthly_payment(&self) -> Decimal {
+    //     let rate = self.interest_rate;
+    //     let numerator = rate * self.principal;
+    //     let denominator = Dec!(1.0) - (Dec!(1.0) + rate).powi(-(self.months as i64));
+    //     numerator / denominator
+    // }
+
+    /// simplified monthly payment that mutates principal
+    fn payment(&mut self, payment: Decimal) {
+        self.principal = (1 + self.interest_rate) * self.principal - payment;
+    }
 }
 
-type PamProposition = TemporalProp<PamTerms>;
+type PamProp = TemporalProp<PamTerms>;

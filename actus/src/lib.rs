@@ -1,3 +1,4 @@
+pub mod exec;
 pub mod pam;
 
 pub fn add(left: usize, right: usize) -> usize {
