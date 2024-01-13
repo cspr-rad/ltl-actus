@@ -12,6 +12,6 @@
       };
     };
     # apps.default = config.nci.outputs.ltl-actus.apps.cli;
-    apps.default = config.nci.crates.cli;
+    # apps.default = config.nci.crates.cli;
   };
 }

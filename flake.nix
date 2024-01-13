@@ -23,7 +23,7 @@
   outputs = inputs@{ self, nixpkgs, nci, nix-pandoc, beamer-theme-serokell
     , parts, fmt }:
     parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" "aarch64-darwin" ];
+      systems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" ];
       imports = [
         nci.flakeModule
         ./nix/crates

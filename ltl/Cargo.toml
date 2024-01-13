@@ -5,6 +5,7 @@ version.workspace = true
 authors.workspace = true
 
 [dependencies]
-time = "0.3"
+time = { version = "0.3", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
 prusti-contracts = "0.2"
 prusti-std = "0.2"

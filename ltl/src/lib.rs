@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
-#[derive(Debug, Eq, Hash, PartialEq, Ord, PartialOrd, Clone, Copy)]
+use serde::Deserialize;
+
+#[derive(Debug, Eq, Hash, PartialEq, Ord, PartialOrd, Clone, Copy, Deserialize)]
 pub struct Timestamp(OffsetDateTime);
 
 impl Timestamp {
@@ -21,6 +23,7 @@ where
     T: TermSet,
 {
     Var(T),
+    Cmp(T, T),
     Not(Box<Prop<T>>),
     Or(Box<Prop<T>>, Box<Prop<T>>),
 }
@@ -36,7 +39,7 @@ pub struct TrueWhen {
 }
 
 impl TrueWhen {
-    fn new(start_t: Timestamp, end_t: Option<Timestamp>) -> Self {
+    pub fn new(start_t: Timestamp, end_t: Option<Timestamp>) -> Self {
         TrueWhen { start_t, end_t }
     }
 
@@ -78,7 +81,7 @@ where
         }
     }
 
-    fn add_state(&mut self, prop: Prop<T>, interval: TrueWhen) {
+    pub fn add_state(&mut self, prop: Prop<T>, interval: TrueWhen) {
         self.states
             .entry(prop)
             .or_insert_with(Vec::new)
@@ -113,42 +116,51 @@ where
     }
 
     /// TODO: refactor for overlapping intervals
+    /**
+     * If ψ is never true, φ must always be true.
+     * Find the first interval where ψ is true
+     * φ must be true for all times before and including the first ψ true interval
+     * If there's no ψ interval starting before current_t, the condition is not satisfied
+     * */
     fn check_release(&self, phi: &Prop<T>, psi: &Prop<T>, current_t: Timestamp) -> bool {
         let phi_intervals = self.states.get(phi).unwrap_or(&Vec::new()).clone();
         let psi_intervals = self.states.get(psi).unwrap_or(&Vec::new()).clone();
 
-        // If ψ is never true, φ must always be true.
         if psi_intervals.is_empty() {
             return self.check_always(phi, current_t);
         }
 
-        // Find the first interval where ψ is true
         let first_psi_true = psi_intervals
             .iter()
             .filter(|interval| interval.start_t <= current_t)
             .min_by_key(|interval| interval.start_t);
 
         match first_psi_true {
-            Some(first_psi_interval) => {
-                // φ must be true for all times before and including the first ψ true interval
-                phi_intervals.iter().any(|interval| {
-                    interval.start_t <= current_t
-                        && interval.end_t.unwrap_or(Timestamp(
-                            OffsetDateTime::from_unix_timestamp(i64::MAX)
-                                .expect("max timestamp panicked"),
-                        )) >= first_psi_interval.start_t
-                })
-            }
-            None => false, // If there's no ψ interval starting before current_t, the condition is not satisfied
+            Some(first_psi_interval) => phi_intervals.iter().any(|interval| {
+                interval.start_t <= current_t
+                    && interval.end_t.unwrap_or(Timestamp(
+                        OffsetDateTime::from_unix_timestamp(i64::MAX)
+                            .expect("max timestamp panicked"),
+                    )) >= first_psi_interval.start_t
+            }),
+            None => false,
         }
     }
 
     /// TODO: refactor for overlapping intervals
+    /**
+     * Find the earliest interval where φ is true after the current timestamp
+     * Check if ψ is true continuously from current_t until the start of first_phi_interval
+     * Found a gap where ψ is not true
+     * - ψ holds continuously until φ becomes true
+     * - ψ holds continuously until the end of time
+     * - ψ does not hold continuously until φ
+     * If φ never becomes true, check if ψ is always true from current_t
+     * */
     fn check_until(&self, phi: &Prop<T>, psi: &Prop<T>, current_t: Timestamp) -> bool {
         let phi_intervals = self.states.get(phi).unwrap_or(&Vec::new()).clone();
         let psi_intervals = self.states.get(psi).unwrap_or(&Vec::new()).clone();
 
-        // Find the earliest interval where φ is true after the current timestamp
         let first_phi_true = phi_intervals
             .iter()
             .filter(|interval| interval.start_t >= current_t)
@@ -156,33 +168,26 @@ where
 
         match first_phi_true {
             Some(first_phi_interval) => {
-                // Check if ψ is true continuously from current_t until the start of first_phi_interval
                 let mut last_psi_end = current_t;
                 for interval in psi_intervals.iter() {
                     if interval.start_t > last_psi_end {
-                        // Found a gap where ψ is not true
                         return false;
                     }
                     match interval.end_t {
                         Some(end_t) => {
                             if end_t >= first_phi_interval.start_t {
-                                // ψ holds continuously until φ becomes true
                                 return true;
                             }
                             last_psi_end = end_t;
                         }
                         None => {
-                            // ψ holds continuously until the end of time
                             return true;
                         }
                     }
                 }
-                false // ψ does not hold continuously until φ
+                false
             }
-            None => {
-                // If φ never becomes true, check if ψ is always true from current_t
-                self.check_always(psi, current_t)
-            }
+            None => self.check_always(psi, current_t),
         }
     }
 }
@@ -206,11 +211,12 @@ where
         Prop::Var(x)
     }
 
-    pub fn eval(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+    pub fn exec_t(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
         match self {
             Prop::Var(_) => state.is_true_at(self, current_t),
-            Prop::Not(p) => !p.eval(state, current_t),
-            Prop::Or(p, q) => p.eval(state, current_t) || q.eval(state, current_t),
+            Prop::Cmp(x, y) => x == y,
+            Prop::Not(p) => !p.exec_t(state, current_t),
+            Prop::Or(p, q) => p.exec_t(state, current_t) || q.exec_t(state, current_t),
         }
     }
 }
@@ -228,16 +234,16 @@ where
             _ => None,
         }
     }
-    pub fn eval(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+    pub fn exec_t(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
         match self {
-            TemporalProp::Term(p) => p.eval(state, current_t),
+            TemporalProp::Term(p) => p.exec_t(state, current_t),
             TemporalProp::Always(tp) => match &**tp {
                 TemporalProp::Term(x) => state.check_always(&x, *current_t),
-                _ => tp.eval(state, current_t),
+                _ => tp.exec_t(state, current_t),
             },
             TemporalProp::Eventually(tp) => match &**tp {
                 TemporalProp::Term(x) => state.check_eventually(&x, *current_t),
-                _ => tp.eval(state, current_t),
+                _ => tp.exec_t(state, current_t),
             },
             TemporalProp::Release(_tp, _tq) => todo!(),
             // match (&**tp, &**tq) {
