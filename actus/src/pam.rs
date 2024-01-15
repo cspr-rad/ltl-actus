@@ -38,15 +38,6 @@ impl PamState {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize, Hash)]
-pub enum Pam {
-    Terms(PamTerms),
-    Event(PamEvent),
-    State(PamState),
-}
-
-impl TermSet for Pam {}
-
 impl Ord for PamTerms {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.principal.cmp(&other.principal)
@@ -68,6 +59,15 @@ impl PartialEq for PamTerms {
             && self.months == other.months
     }
 }
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize, Hash)]
+pub enum Pam {
+    Terms(PamTerms),
+    Event(PamEvent),
+    State(PamState),
+}
+
+impl TermSet for Pam {}
 
 // [derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 // ub struct PamEvent {
@@ -115,14 +115,6 @@ impl PamTerms {
         }
     }
 
-    //  fn process_event(&self, event: EventType) -> PamEvent {
-    //      match event {
-    //          EventType::Maturity => PamEvent::new(self.final_payment(), self.months),
-    //          EventType::PrincipalRepayment => PamEvent::new(self.principal_repayment(), 0),
-    //          EventType::InterestPayment => PamEvent::new(self.interest_payment(), 0),
-    //      }
-    //  }
-
     fn interest_payment(&self) -> Decimal {
         self.interest_rate / Decimal::from(12) * self.principal
     }
@@ -130,11 +122,34 @@ impl PamTerms {
     fn final_payment(&self) -> Decimal {
         self.principal
     }
+}
 
-    //fn run(&self, events: Vec<EventType>) -> Trace<PamTerms> {
-    //    // let mut execution = Execution::new(self, self.contract(), 0);
-    //    // execution.run(events.into_iter().map(|event| self.process_event(event)))
-    // }
+impl Pam {
+    fn new(principal: Decimal, interest_rate: Decimal, months: usize) -> Self {
+        Pam::Terms(PamTerms::new(principal, interest_rate, months))
+    }
+
+    // I want mutable Event and State, but immutable Terms. the getters and setters for that are:
+    pub fn terms(&self) -> &PamTerms {
+        match self {
+            Pam::Terms(terms) => terms,
+            _ => panic!("Pam is not a Terms"),
+        }
+    }
+
+    pub fn state(&self) -> &PamState {
+        match self {
+            Pam::State(state) => state,
+            _ => panic!("Pam is not a State"),
+        }
+    }
+
+    pub fn update_state(&mut self, state: PamState) {
+        match self {
+            Pam::State(s) => *s = state,
+            _ => panic!("Pam is not a State"),
+        }
+    }
 }
 
 type PamProp = TemporalProp<Pam>;

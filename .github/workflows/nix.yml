@@ -36,11 +36,11 @@ jobs:
       - name: build
         run: nix build -L --no-link --show-trace .#ltl_actus_cli-release
 
-    comms:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - uses: DeterminateSystems/nix-installer-action@v9
-        - uses: DeterminateSystems/magic-nix-cache-action@v2
-        - name: build
-          run: nix build -L --no-link --show-trace .#talk
+  comms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v9
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: build
+        run: nix build -L --no-link --show-trace .#talk
