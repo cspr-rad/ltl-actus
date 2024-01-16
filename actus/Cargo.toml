@@ -9,3 +9,8 @@ ltl = { path = "../ltl" }
 time = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 fpdec = { version = "0.10", features = ["std", "serde-as-str", "num-traits"] }
+log = "0.4"
+simplelog = "0.12"
+
+[dev-dependencies]
+ctor = "0.2"

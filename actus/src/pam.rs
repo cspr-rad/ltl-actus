@@ -2,7 +2,6 @@ extern crate ltl;
 
 use fpdec::{Dec, Decimal};
 use serde::Deserialize;
-// use time::{Duration, PrimitiveDateTime};
 
 use ltl::*;
 
@@ -156,29 +155,52 @@ type PamProp = TemporalProp<Pam>;
 
 fn contract(principal: Decimal, interest_rate: Decimal, months: usize) -> PamProp {
     let t: PamTerms = PamTerms::new(principal, interest_rate, months);
-    let term_set = TemporalProp::Always(Box::new(TemporalProp::Term(Prop::Var(Pam::Terms(t)))));
+    let term_set = always(TemporalProp::Term(Prop::Var(Pam::Terms(t))));
     let total_repayment = principal * (Dec!(1) + interest_rate / Dec!(12) * Dec!(24));
-    let repayment_final = TemporalProp::Eventually(Box::new(TemporalProp::Term(Prop::Var(
-        Pam::State(PamState::new(total_repayment, Timestamp::new(None))),
-    ))));
+    let repayment_final = eventually(TemporalProp::Term(Prop::Var(Pam::State(PamState::new(
+        total_repayment,
+        Timestamp::new(None),
+    )))));
     and(&term_set, &repayment_final)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use log::LevelFilter;
+    use simplelog::{Config, WriteLogger};
+    use std::fs::File;
+    use time::{Duration, OffsetDateTime};
 
     #[test]
     fn test_pam() {
+        let _ = WriteLogger::init(
+            LevelFilter::Debug,
+            Config::default(),
+            File::create("execution.log").unwrap(),
+        );
         let principal = Dec!(1000);
         let interest_rate = Dec!(0.05);
         let months = 24;
         let terms = PamTerms::new(principal, interest_rate, months);
         let contract = contract(principal, interest_rate, months);
+        println!("contract: {}", contract);
         let mut state = StateStore::new();
         let always_interval = TrueWhen::new(Timestamp::new(None), None);
+        let end_contract_date = OffsetDateTime::now_utc() + Duration::weeks(4 * months as i64);
+        let active_interval = TrueWhen::new(
+            Timestamp::new(None),
+            Some(Timestamp::new(Some(end_contract_date))),
+        );
         state.add_state(Prop::Var(Pam::Terms(terms)), always_interval);
-        let executed = contract.exec_t(&state, &Timestamp::new(None));
+        state.add_state(
+            Prop::Not(Box::new(Prop::Eq(
+                Pam::State(PamState::new(Dec!(0), Timestamp::new(None))),
+                Pam::State(PamState::new(principal, Timestamp::new(None))),
+            ))),
+            active_interval,
+        );
+        let executed = contract.check(&state, &Timestamp::new(None));
         assert!(executed);
     }
 }

@@ -1,4 +1,6 @@
+use log::debug;
 use std::collections::HashMap;
+use std::fmt::{Debug, Display};
 use time::OffsetDateTime;
 
 use serde::Deserialize;
@@ -15,7 +17,7 @@ impl Timestamp {
     }
 }
 
-pub trait TermSet: Clone + PartialEq + Eq + std::hash::Hash {}
+pub trait TermSet: Debug + Clone + PartialEq + Eq + std::hash::Hash {}
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub enum Prop<T>
@@ -23,9 +25,23 @@ where
     T: TermSet,
 {
     Var(T),
-    Cmp(T, T),
+    Eq(T, T),
     Not(Box<Prop<T>>),
     Or(Box<Prop<T>>, Box<Prop<T>>),
+}
+
+impl<T> Display for Prop<T>
+where
+    T: TermSet,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Prop::Var(x) => write!(f, "{:?}", x),
+            Prop::Eq(x, y) => write!(f, "{:?} = {:?}", x, y),
+            Prop::Not(p) => write!(f, "¬({})", p),
+            Prop::Or(p, q) => write!(f, "({}) ∨ ({})", p, q),
+        }
+    }
 }
 
 /** TrueWhen represents the interval in which a proposition is true.
@@ -57,10 +73,53 @@ where
     T: TermSet,
 {
     Term(Prop<T>),
+    And(Box<TemporalProp<T>>, Box<TemporalProp<T>>),
     Always(Box<TemporalProp<T>>),
     Eventually(Box<TemporalProp<T>>),
     Release(Box<TemporalProp<T>>, Box<TemporalProp<T>>),
     Until(Box<TemporalProp<T>>, Box<TemporalProp<T>>),
+}
+
+impl<T> Display for TemporalProp<T>
+where
+    T: TermSet,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemporalProp::Term(p) => Display::fmt(&*p, f),
+            TemporalProp::Always(p) => {
+                write!(f, "□(");
+                Display::fmt(&**p, f);
+                write!(f, ")")
+            }
+            TemporalProp::And(p, q) => {
+                write!(f, "(")?;
+                Display::fmt(&**p, f)?;
+                write!(f, ") ∧ (")?;
+                Display::fmt(&**q, f)?;
+                write!(f, ")")
+            }
+            TemporalProp::Eventually(p) => {
+                write!(f, "◇(");
+                Display::fmt(&**p, f);
+                write!(f, ")")
+            }
+            TemporalProp::Release(p, q) => {
+                write!(f, "(")?;
+                Display::fmt(&**p, f)?;
+                write!(f, ") R (")?;
+                Display::fmt(&**q, f)?;
+                write!(f, ")")
+            }
+            TemporalProp::Until(p, q) => {
+                write!(f, "(")?;
+                Display::fmt(&**p, f)?;
+                write!(f, ") U (")?;
+                Display::fmt(&**q, f)?;
+                write!(f, ")")
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -211,12 +270,12 @@ where
         Prop::Var(x)
     }
 
-    pub fn exec_t(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+    pub fn check(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
         match self {
             Prop::Var(_) => state.is_true_at(self, current_t),
-            Prop::Cmp(x, y) => x == y,
-            Prop::Not(p) => !p.exec_t(state, current_t),
-            Prop::Or(p, q) => p.exec_t(state, current_t) || q.exec_t(state, current_t),
+            Prop::Eq(x, y) => x == y,
+            Prop::Not(p) => !p.check(state, current_t),
+            Prop::Or(p, q) => p.check(state, current_t) || q.check(state, current_t),
         }
     }
 }
@@ -231,19 +290,44 @@ where
     pub fn unlift_prop(&self) -> Option<Prop<T>> {
         match self {
             TemporalProp::Term(p) => Some(p.clone()),
-            _ => None,
+            TemporalProp::Always(tp) => tp.unlift_prop(),
+            TemporalProp::Eventually(tp) => tp.unlift_prop(),
+            _ => None, // TODO
         }
     }
-    pub fn exec_t(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+    pub fn check(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
+        debug!("---------------------------------");
+        debug!("Executing temporal prop: {}", self);
         match self {
-            TemporalProp::Term(p) => p.exec_t(state, current_t),
+            TemporalProp::Term(p) => {
+                debug!("Executing term: {}", p);
+                p.check(state, current_t)
+            }
+            TemporalProp::And(p, q) => {
+                debug!("Executing and: {} and {}", p, q);
+                p.check(state, current_t) && q.check(state, current_t)
+            }
             TemporalProp::Always(tp) => match &**tp {
-                TemporalProp::Term(x) => state.check_always(&x, *current_t),
-                _ => tp.exec_t(state, current_t),
+                TemporalProp::Term(x) => {
+                    let always_check = state.check_always(&x, *current_t);
+                    debug!("Always check at {}: {}", &x, always_check);
+                    always_check
+                }
+                _ => {
+                    debug!("Descending into {} ...", tp);
+                    tp.check(state, current_t)
+                }
             },
             TemporalProp::Eventually(tp) => match &**tp {
-                TemporalProp::Term(x) => state.check_eventually(&x, *current_t),
-                _ => tp.exec_t(state, current_t),
+                TemporalProp::Term(x) => {
+                    let eventually_check = state.check_eventually(&x, *current_t);
+                    debug!("Eventually check at {}: {}", &x, eventually_check);
+                    eventually_check
+                }
+                _ => {
+                    debug!("Descending into {} ...", tp);
+                    tp.check(state, current_t)
+                }
             },
             TemporalProp::Release(_tp, _tq) => todo!(),
             // match (&**tp, &**tq) {
@@ -286,7 +370,7 @@ pub fn or<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<
 }
 
 pub fn and<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
-    not(&or(&not(p), &not(q)))
+    TemporalProp::<T>::And(Box::new(p.clone()), Box::new(q.clone()))
 }
 
 pub fn implies<T: TermSet>(p: &TemporalProp<T>, q: &TemporalProp<T>) -> TemporalProp<T> {
@@ -316,13 +400,13 @@ pub fn until<T: TermSet>(p: TemporalProp<T>, q: TemporalProp<T>) -> TemporalProp
 /*
  * Tests
  */
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//    use super::*;
+//
+//    #[test]
+//    fn it_works() {
+//        let result = 2 + 2;
+//        assert_eq!(result, 4);
+//    }
+// }

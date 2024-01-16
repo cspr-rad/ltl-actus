@@ -1,3 +1,4 @@
+/// AS OF JANUARY WORKSHOP: DUMMY. Use `RUST_LOG=debug cargo test` instead.
 use std::{fs, path::PathBuf};
 
 use structopt::StructOpt;

@@ -5,5 +5,10 @@ The [algorithmic contract types unified standard](https://actusfrf.org) executed
 ## Example (WIP): Execution trace of a loan
 
 ``` sh
-nix run .#ltl_actus_cli-release -- exec --path ./examples/loan-1.toml
+nix develop
+$ RUST_LOG=debug cargo test
+$ cat actus/execution.log 
 ```
+
+This is intended to be a **demo** in a **toy version of ACTUS**
+
