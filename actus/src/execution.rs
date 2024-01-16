@@ -68,12 +68,12 @@ where
                 trace
             })
     }
-    fn update_state_store<E: Event>(&mut self, event: &E) {
+    fn update_state_store<E: Event>(&mut self, _event: &E) {
         // Logic to update state store based on the event
         // This could involve modifying the `states` HashMap in `StateStore<T>`
     }
 
-    fn evaluate_contract<E: Event>(&mut self, event: &E) {
+    fn evaluate_contract<E: Event>(&mut self, _event: &E) {
         // Logic to evaluate how the event affects the contract
         // This involves interpreting `TemporalProp<T>` based on the event
     }

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use log::debug;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
@@ -86,36 +87,36 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TemporalProp::Term(p) => Display::fmt(&*p, f),
+            TemporalProp::Term(p) => Display::fmt(p, f),
             TemporalProp::Always(p) => {
                 write!(f, "□(");
-                Display::fmt(&**p, f);
+                let _ = Display::fmt(&**p, f);
                 write!(f, ")")
             }
             TemporalProp::And(p, q) => {
                 write!(f, "(")?;
-                Display::fmt(&**p, f)?;
+                let _ = Display::fmt(&**p, f)?;
                 write!(f, ") ∧ (")?;
-                Display::fmt(&**q, f)?;
+                let _ = Display::fmt(&**q, f)?;
                 write!(f, ")")
             }
             TemporalProp::Eventually(p) => {
                 write!(f, "◇(");
-                Display::fmt(&**p, f);
+                let _ = Display::fmt(&**p, f);
                 write!(f, ")")
             }
             TemporalProp::Release(p, q) => {
                 write!(f, "(")?;
-                Display::fmt(&**p, f)?;
+                let _ = Display::fmt(&**p, f)?;
                 write!(f, ") R (")?;
-                Display::fmt(&**q, f)?;
+                let _ = Display::fmt(&**q, f)?;
                 write!(f, ")")
             }
             TemporalProp::Until(p, q) => {
                 write!(f, "(")?;
-                Display::fmt(&**p, f)?;
+                let _ = Display::fmt(&**p, f)?;
                 write!(f, ") U (")?;
-                Display::fmt(&**q, f)?;
+                let _ = Display::fmt(&**q, f)?;
                 write!(f, ")")
             }
         }
@@ -130,6 +131,15 @@ where
     states: HashMap<Prop<T>, Vec<TrueWhen>>,
 }
 
+impl<T> Default for StateStore<T>
+where
+    T: TermSet,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> StateStore<T>
 where
     T: TermSet,
@@ -141,10 +151,7 @@ where
     }
 
     pub fn add_state(&mut self, prop: Prop<T>, interval: TrueWhen) {
-        self.states
-            .entry(prop)
-            .or_insert_with(Vec::new)
-            .push(interval);
+        self.states.entry(prop).or_default().push(interval);
     }
 
     fn is_true_at(&self, prop: &Prop<T>, timestamp: &Timestamp) -> bool {
@@ -309,7 +316,7 @@ where
             }
             TemporalProp::Always(tp) => match &**tp {
                 TemporalProp::Term(x) => {
-                    let always_check = state.check_always(&x, *current_t);
+                    let always_check = state.check_always(x, *current_t);
                     debug!("Always check at {}: {}", &x, always_check);
                     always_check
                 }
@@ -320,7 +327,7 @@ where
             },
             TemporalProp::Eventually(tp) => match &**tp {
                 TemporalProp::Term(x) => {
-                    let eventually_check = state.check_eventually(&x, *current_t);
+                    let eventually_check = state.check_eventually(x, *current_t);
                     debug!("Eventually check at {}: {}", &x, eventually_check);
                     eventually_check
                 }
@@ -400,13 +407,3 @@ pub fn until<T: TermSet>(p: TemporalProp<T>, q: TemporalProp<T>) -> TemporalProp
 /*
  * Tests
  */
-// #[cfg(test)]
-// mod tests {
-//    use super::*;
-//
-//    #[test]
-//    fn it_works() {
-//        let result = 2 + 2;
-//        assert_eq!(result, 4);
-//    }
-// }

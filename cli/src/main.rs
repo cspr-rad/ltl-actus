@@ -2,7 +2,6 @@
 use std::{fs, path::PathBuf};
 
 use structopt::StructOpt;
-use toml;
 
 use actus::pam::PamTerms;
 

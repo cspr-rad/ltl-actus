@@ -5,10 +5,7 @@ use serde::Deserialize;
 
 use ltl::*;
 
-use crate::event_types::EventType;
-use crate::execution::*;
-
-#[derive(Debug, Clone, Copy, Deserialize, Hash)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
 pub struct PamTerms {
     principal: Decimal,
     interest_rate: Decimal,
@@ -45,16 +42,6 @@ impl PartialOrd for PamTerms {
     }
 }
 
-impl Eq for PamTerms {}
-
-impl PartialEq for PamTerms {
-    fn eq(&self, other: &Self) -> bool {
-        self.principal == other.principal
-            && self.interest_rate == other.interest_rate
-            && self.months == other.months
-    }
-}
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize, Hash)]
 pub enum Pam {
     Terms(PamTerms),
@@ -63,43 +50,6 @@ pub enum Pam {
 }
 
 impl TermSet for Pam {}
-
-// [derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-// ub struct PamEvent {
-//    payment: Decimal,
-//    timestamp: Timestamp,
-//
-//
-// mpl PamEvent {
-//    fn new(payment: Decimal, timestamp: Timestamp) -> Self {
-//        PamEvent { payment, timestamp }
-//    }
-//
-//
-// mpl Ord for PamEvent {
-//    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-//        self.timestamp.cmp(&other.timestamp)
-//    }
-//
-
-// impl PartialOrd for PamEvent {
-//    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-//        Some(self.cmp(other))
-//     }
-// }
-
-// impl Event for PamEvent {
-//    fn timestamp(&self) -> Timestamp {
-//        self.timestamp
-//    }
-
-//    fn action(&self) -> Self {
-//        PamEvent {
-//            payment: self.payment,
-//            timestamp: self.timestamp,
-//        }
-//    }
-//}
 
 impl PamTerms {
     fn new(principal: Decimal, interest_rate: Decimal, months: usize) -> Self {
@@ -124,7 +74,6 @@ impl Pam {
         Pam::Terms(PamTerms::new(principal, interest_rate, months))
     }
 
-    // I want mutable Event and State, but immutable Terms. the getters and setters for that are:
     pub fn terms(&self) -> &PamTerms {
         match self {
             Pam::Terms(terms) => terms,
