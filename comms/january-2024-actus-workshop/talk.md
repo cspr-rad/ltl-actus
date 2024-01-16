@@ -111,13 +111,13 @@ Pay interest periodically, but principal only at end of term
 
 ### The terms are static throughout lifetime of contract
 
-$\Box \text{Terms(princ=1000, ir=0.05, months=24)}$
+$\Box$ Terms(`principal`=1000, `ir`=0.05, `months`=24)
 
 ### The eventual total repayment is equal to the principal plus interest
 
-$\Box \text{State(total_repayment = principal * (1 + ir / 12) * months)}$ 
+$\Box$ State(`total_repayment`=`principal` * (1 + `ir` / 12) * months) 
 
-We "and" ($\land$) each of these temporal propositions together
+### We connect each of these temporal propositions together with "and" ($\land$)
 
 # LTL-ACTUS (demo)
 
