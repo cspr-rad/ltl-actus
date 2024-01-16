@@ -296,7 +296,7 @@ where
         }
     }
     pub fn check(&self, state: &StateStore<T>, current_t: &Timestamp) -> bool {
-        debug!("---------------------------------");
+        debug!("---recurring!------------------------------");
         debug!("Executing temporal prop: {}", self);
         match self {
             TemporalProp::Term(p) => {

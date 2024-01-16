@@ -11,7 +11,8 @@
         ltl_actus_cli = import ./cli.nix { inherit pkgs config; };
       };
     };
-    apps.default.program = "${config.nci.outputs.ltl_actus_cli.packages.release}/bin/ltl_actus_cli";
+    apps.default.program =
+      "${config.nci.outputs.ltl_actus_cli.packages.release}/bin/ltl_actus_cli";
     packages.default = config.nci.outputs.ltl_actus_cli.packages.release;
   };
 }

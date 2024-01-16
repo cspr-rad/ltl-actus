@@ -109,17 +109,15 @@ Pay interest periodically, but principal only at end of term
 
 ## PAM in LTL
 
-### The loan must eventually mature, and at that point, the principal must be paid:
+### The terms are static throughout lifetime of contract
 
-$\Diamond \text{(date = maturityDate)} \rightarrow \text{(principal = 0)}$
+$\Box \text{Terms(princ=1000, ir=0.05, months=24)}$
 
-### Until the loan matures, the principal remains unpaid:
+### The eventual total repayment is equal to the principal plus interest
 
-$\Box \left( \text{(date < maturityDate)} \rightarrow \text{(principal > 0)} \right)$
+$\Box \text{State(total_repayment = principal * (1 + ir / 12) * months)}$ 
 
-### A correct interest payment is due at each payment period:
-
-$\Box \text{(date = paymentDate)} \rightarrow \text{(interestPayment = principal * interestRate)}$
+We "and" ($\land$) each of these temporal propositions together
 
 # LTL-ACTUS (demo)
 
