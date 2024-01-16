@@ -6,3 +6,5 @@ tmp/
 .direnv/
 target/
 result
+
+.vscode/

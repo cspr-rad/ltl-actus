@@ -53,7 +53,7 @@ $P \lor Q$ if and only if at least one of $P$ or $Q$ is true
 
 ### Not
 
-$\neg $ if and only if $P$ is not true 
+$\neg$ if and only if $P$ is not true 
 
 ## The quantifiers
 
@@ -115,7 +115,7 @@ $\Box$ Terms(`principal`=1000, `ir`=0.05, `months`=24)
 
 ### The eventual total repayment is equal to the principal plus interest
 
-$\Box$ State(`total_repayment`=`principal` * (1 + `ir` / 12) * months) 
+$\Diamond$ State(`total_repayment`=`principal` * (1 + `ir` / 12) * `months`) 
 
 ### We connect each of these temporal propositions together with "and" ($\land$)
 
