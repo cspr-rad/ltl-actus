@@ -3,6 +3,8 @@ extern crate ltl;
 use fpdec::{Dec, Decimal};
 use serde::Deserialize;
 
+use ltl::logic::{Prop, TemporalProp};
+use ltl::types::TermSet;
 use ltl::*;
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]

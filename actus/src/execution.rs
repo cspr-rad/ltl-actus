@@ -2,7 +2,9 @@
 // use std::collections::HashMap;
 use std::iter::Iterator;
 
-use ltl::{StateStore, TemporalProp, TermSet, Timestamp};
+use ltl::logic::TemporalProp;
+use ltl::types::TermSet;
+use ltl::{StateStore, Timestamp};
 
 pub trait Event: Clone + PartialEq + Eq {
     fn timestamp(&self) -> Timestamp;
