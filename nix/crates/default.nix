@@ -1,9 +1,9 @@
 { inputs, ... }: {
-  perSystem = { pkgs, config, ... }: {
+  perSystem = { pkgs, config, lib, ... }: {
     nci = {
       projects.ltl-actus = {
         path = inputs.self;
-        export = true;
+        # export = true;
         # drvConfig.mkDerivation.buildInputs = with pkgs; [
         #   rustup
         #   zulu
@@ -11,8 +11,8 @@
         # # Even tho vscode can't pick it up ephemerally and it needs user installed rustup and java.
       };
       crates = {
-        ltl = import ./ltl.nix { inherit pkgs config; };
-        actus = import ./actus.nix { inherit pkgs config; };
+        ltl = import ./ltl.nix { inherit pkgs config lib; };
+        actus = import ./actus.nix { inherit pkgs config lib; };
         ltl_actus_cli = import ./cli.nix { inherit pkgs config; };
       };
     };
