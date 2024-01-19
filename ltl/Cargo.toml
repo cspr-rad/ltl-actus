@@ -1,8 +1,6 @@
 [package]
 name = "ltl"
 edition = "2021"
-version.workspace = true
-authors.workspace = true
 
 [dependencies]
 time = { version = "0.3", features = ["serde"] }

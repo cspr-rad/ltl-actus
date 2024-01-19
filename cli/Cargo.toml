@@ -1,8 +1,6 @@
 [package]
 edition = "2021"
 name = "ltl_actus_cli"
-version.workspace = true
-authors.workspace = true
 
 [dependencies]
 actus = { path = "../actus" }

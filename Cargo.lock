@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "actus"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "ctor",
  "fpdec",
@@ -176,7 +176,7 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "ltl"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "log",
  "prusti-contracts",
@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "ltl_actus_cli"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
  "actus",
  "structopt",
