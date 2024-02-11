@@ -1,0 +1,54 @@
+#+title: Can we formally verify ACTUS traces with linear temporal logic?
+
+* Introduction
+The algorithmic contract types unified standard (ACTUS) is a focus here at Casper Association because we're driving toward a future of auditable and interpretable financial execution traces. A financial execution trace is a sequence of cashflows that fulfill a financial contract between counterparties. Such a trace would be auditable and interpretable if we could reliably predict which sets of cash flows would validly close out the contract based on piping together a few principles.
+
+One component of this is to make ACTUS runnable in a zero knowledge environment, which will be discussed in other posts. Another component is to make ACTUS *formally verifiable*.
+
+Formal verification is a kind of quality assurance process, like testing but on steroids. It uses mathematical proofs when implemented software is the object of mathematical study to show that software is "correct" according to "specifications". A specification is just a description of how a piece of software ought to behave, and software is correct when it behaves that way. A proof is just some certificate of how you know an implementation is in accords with a specification.
+
+To study finance in this environment, in today's post I will propose we view financial contracts as components in a reactive system. An example reactive system is a traffic light apparatus: it's behavior is specified as states' responses to an input stream (the flow of cars seen by cameras). A simple tool to study this in a formal verification environment is a type of logic called *linear temporal logic*.
+
+** Formal logic: the basis of formal verification
+In today's post, we will look at how a particular kind of logic-- called linear temporal logic -- may be a usable specification language for normative descriptions of how ACTUS ought to behave. With that in sight, let's review the basics of formal logic
+*** Argument's structure
+Formal logic is the study of the structure of arguments. Two of the big ones are modus ponens and modus tollens.
+
+In modus ponens, we derive a conclusion from an implication and a premise. So if we know that snow implies coldness, and we know it is snowing, then we combine these together with modus ponens to conclude that it is cold.
+
+In modus tollens, we kinda flip it around. We know that if it is snowing then it is cold, but we notice it is not cold outside. Therefore, we conclude that it is not snowing.
+*** The connectives
+-  -$P \land Q$ is true if both $P$ is true and $Q$ is true.
+- $P \lor Q$ is true if at least one of $P$ or $Q$ is true.
+- $\neg P$ is true if $P$ is not true.
+* Linear temporal logic (LTL)
+Linear temporal logic extends the basic logic with extra operators that act on propositions like $P$ and $Q$ to make the logic aware of /time/. So instead of just reasoning about what's true, you can reason about when things are true depending on your representation of time.
+- $\Box P$ is a proposition whenever $P$ is a proposition, and it is true only if $P$ is true regardless of timestep. This operator is called /always/.
+- $\Diamond P$ is a proposition whenever $P$ is a proposition, and it is true only if $P$ becomes true eventually. This operator is called /eventually/, following from modal logic's "possibly".
+** Example specification in linear temporal logic: traffic lights
+To express that a traffic light should never be green in all directions, write $\Box (\text{(northGreen \land \text{southGreen}) \rightarrow \neg(\text{eastGreen} \lor \text{westGreen}))$
+
+To express that a traffic light should eventually turn green in all directions, write $\Box \Diamond \textit{l}$ for each of the traffic lights $\textit{l}$, and conjoin them together with the $\land$ connective.
+
+* LTL ACTUS (with demo code)
+One of the key ACTUS primitives is the principal at maturity, or PAM, which is a simple kind of loan. In a PAM contract, the borrower pays interest periodically but only pays the principal at the end of the term. This can be readily modeled with LTL:
+- $\Diamond$ (~total_repayment = principal * (1 + interest_rate) * months~)
+
+Additionally, we would like to show that the terms are fixed through the length of the contract.
+- $\Box$ (~terms = {principal: 1000, interest_rate: 0.05, months: 24}~)
+
+When I rolled a quick LTL in rust, I was able to express PAM as an ltl specification like so
+
+#+BEGIN_SRC rust
+fn contract(principal: Decimal, interest_rate: Decimal, months: usize) -> PamProp {
+    let t: PamTerms = PamTerms::new(principal, interest_rate, months);
+    let term_set = always(TemporalProp::Term(Prop::Var(Pam::Terms(t))));
+    let total_repayment = principal * (Dec!(1) + interest_rate * Dec!(24));
+    let total_repayment_final = eventually(TemporalProp::Term(Prop::Var(Pam::State(
+        PamState::new(total_repayment),
+    ))));
+    and(&term_set, &total_repayment_final)
+}
+#+END_SRC
+
+Notice the ~term_set~ is constructed by the `always` function (which under the hood is a ~TemporalProp::Always~ variant), and ~total_repayment_final~ by the ~eventually~ function (under the hood is ~TemporalProp::Eventually~ variant).
