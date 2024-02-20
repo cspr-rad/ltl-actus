@@ -2,11 +2,6 @@
   perSystem = { config, pkgs, ... }: {
     devShells = let greeting = "Welcome to ACTUS in linear temporal logic";
     in {
-      bootstrap = with pkgs;
-        mkShell {
-          shellHook = "echo ${greeting}";
-          buildInputs = [ rustup libressl pkg-config ];
-        };
       rs = config.nci.outputs.ltl-actus.devShell;
       c = with pkgs;
         mkShell {

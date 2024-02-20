@@ -1,22 +1,26 @@
-# ltl-actus
+# `ltl-actus`
 
 Linear temporal logic to execute the algorithmic contract types unified standard
 
 ## Installation
 
-## Building from source
+```sh
+nix build ./../#cmake
+./result/bin/ltl-actus
+```
 
-Make sure that you have [CMake](http://www.cmake.org/) and a C compiler installed.
+### Building from source
 
-Then open a terminal, go to the source directory and type the following commands:
+Needs `cmake`, `gnumake`, `glib`, and `pkg-config`. This is all in the `nix develop ./../#c`.
 
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
+```sh
+nix develop ./../#c
+mkdir build
+cd build
+cmake ./../
+make 
+```
 
-## Running tests
+### Running tests
 
-## License
-
-mit
+stub

@@ -10,4 +10,4 @@ A take in rust. Rust was chosen to best interface with the Casper ecosystem.
 
 ## `c`
 
-A take in c. C makes sense because Lita Foundation can put c programs on their zk stack
+A take in c. C makes sense because Lita Foundation can put c programs on their zk stack. Additionally, we could use the [verified software toolchain](https://vst.cs.princeton.edu/)
