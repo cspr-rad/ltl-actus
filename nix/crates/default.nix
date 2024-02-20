@@ -2,7 +2,7 @@
   perSystem = { pkgs, config, lib, ... }: {
     nci = {
       projects.ltl-actus = {
-        path = inputs.self;
+        path = "${inputs.self}/rs";
         # export = true;
         # drvConfig.mkDerivation.buildInputs = with pkgs; [
         #   rustup

@@ -2,15 +2,12 @@
 
 The [algorithmic contract types unified standard](https://actusfrf.org) executed in [linear temporal logic](https://en.wikipedia.org/wiki/Linear_temporal_logic)
 
-## Example (WIP): Execution trace of a loan
+**Prototype**. 
 
-No dependencies between tests, but the log file will be written correctly if the runner is single threaded. 
+## `rs`
 
-``` sh
-nix develop
-$ RUST_LOG=debug cargo test -- --test-threads=1
-$ cat execution_trace.log 
-```
+A take in rust. Rust was chosen to best interface with the Casper ecosystem. 
 
-This is intended to be a **demo** in a **toy version of ACTUS**
+## `c`
 
+A take in c. C makes sense because Lita Foundation can put c programs on their zk stack 
