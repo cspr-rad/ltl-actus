@@ -55,7 +55,7 @@ include(CPack)
 set(CMAKE_C_STANDARD 17)
 
 # Source code files, all .h and .c files from src/ directory are included
-file(GLOB SOURCES "src/*.h" "src/*.c")
+file(GLOB SOURCES "include/*.h" "src/*.c")
 
 # Executable name
 add_executable(${PROJECT_NAME} ${SOURCES})

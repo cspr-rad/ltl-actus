@@ -18,7 +18,7 @@ nix develop ./../#c
 mkdir build
 cd build
 cmake ./../
-make 
+make
 ```
 
 ### Running tests
