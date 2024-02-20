@@ -1,8 +1,11 @@
 [package]
 edition = "2021"
+version = "0.0.1"
 name = "ltl_actus_cli"
 
 [dependencies]
 actus = { path = "../actus" }
 structopt = "0.3"
 toml = '0.8.8'
+prusti-contracts = "0.2"
+prusti-std = "0.2"

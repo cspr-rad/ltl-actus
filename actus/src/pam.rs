@@ -1,6 +1,7 @@
 extern crate ltl;
 
 use fpdec::{Dec, Decimal};
+use prusti_contracts::*;
 use serde::Deserialize;
 
 use ltl::logic::{Prop, TemporalProp};

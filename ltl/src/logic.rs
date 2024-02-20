@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display};
 
+use prusti_contracts::*;
+
 use crate::types::TermSet;
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]

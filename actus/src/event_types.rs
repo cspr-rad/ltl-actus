@@ -1,6 +1,7 @@
 /// Copied from Avi's `actus-rs` project.
 use std::fmt::Display;
 
+use prusti_contracts::*;
 use serde::{Deserialize, Serialize};
 
 /// Different types of events.
