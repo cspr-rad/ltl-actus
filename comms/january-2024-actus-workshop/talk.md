@@ -14,16 +14,16 @@ header-includes:
   - \usemintedstyle{native}
 ---
 
-  - Logic
-    - Introduction
-    - Why it matters in financial software
-  - Linear Temporal Logic (LTL)
-    - Beyond truth to truth _when_
-  - ACTUS
-    - PAM in LTL
-  - LTL-ACTUS (demo)
-    - A formal verification strategy for finance
-  
+- Logic
+  - Introduction
+  - Why it matters in financial software
+- Linear Temporal Logic (LTL)
+  - Beyond truth to truth _when_
+- ACTUS
+  - PAM in LTL
+- LTL-ACTUS (demo)
+  - A formal verification strategy for finance
+
 # Logic
 
 - What is logic
@@ -41,11 +41,11 @@ If it is raining, then the ground is wet. It is raining. Therefore, the ground i
 
 If it is snowing, then it is cold outside. It is not cold outside. Therefore, it is not snowing.
 
-## The connectives 
+## The connectives
 
-### And 
+### And
 
-$P \land Q$ if and only if $P$ is true and $Q$ is true. 
+$P \land Q$ if and only if $P$ is true and $Q$ is true.
 
 ### Or
 
@@ -53,7 +53,7 @@ $P \lor Q$ if and only if at least one of $P$ or $Q$ is true
 
 ### Not
 
-$\neg$ if and only if $P$ is not true 
+$\neg$ if and only if $P$ is not true
 
 ## The quantifiers
 
@@ -93,10 +93,10 @@ $\Diamond P$ is true if $P$ will come true at some timestep, but possibly not ye
 
 ## Verifying a traffic light with LTL
 
-### A traffic light should never be green in all directions 
+### A traffic light should never be green in all directions
 
 $\Box \left( \text{(northGreen} \land \text{southGreen)} → \neg (\text{eastGreen} \lor \text{westGreen}) \right)$
-  
+
 ### A traffic light should eventually turn green in all directions
 
 $\Box \Diamond \text{northGreen} \land \Box \Diamond \text{southGreen} \land \Box \Diamond \text{eastGreen} \land \Box \Diamond \text{westGreen}$
@@ -115,7 +115,7 @@ $\Box$ Terms(`principal`=1000, `ir`=0.05, `months`=24)
 
 ### The eventual total repayment is equal to the principal plus interest
 
-$\Diamond$ State(`total_repayment`=`principal` * (1 + `ir` / 12) * `months`) 
+$\Diamond$ State(`total_repayment`=`principal` _ (1 + `ir` / 12) _ `months`)
 
 ### We connect each of these temporal propositions together with "and" ($\land$)
 

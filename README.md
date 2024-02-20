@@ -2,12 +2,12 @@
 
 The [algorithmic contract types unified standard](https://actusfrf.org) executed in [linear temporal logic](https://en.wikipedia.org/wiki/Linear_temporal_logic)
 
-**Prototype**. 
+**Prototype**.
 
 ## `rs`
 
-A take in rust. Rust was chosen to best interface with the Casper ecosystem. 
+A take in rust. Rust was chosen to best interface with the Casper ecosystem.
 
 ## `c`
 
-A take in c. C makes sense because Lita Foundation can put c programs on their zk stack 
+A take in c. C makes sense because Lita Foundation can put c programs on their zk stack

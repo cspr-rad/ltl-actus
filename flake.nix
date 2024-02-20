@@ -27,6 +27,7 @@
       imports = [
         nci.flakeModule
         ./nix/crates
+        ./nix/cmake
         ./nix/shells.nix
         ./nix/comms
         fmt.flakeModule
