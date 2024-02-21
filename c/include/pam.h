@@ -1,7 +1,7 @@
 #ifndef __PAM_H
 #define __PAM_H
 
-#include <stddef.h> // For size_t
+#include <stddef.h>
 
 typedef size_t InterestRate;
 typedef size_t Money;

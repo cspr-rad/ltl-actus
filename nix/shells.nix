@@ -7,7 +7,13 @@
         mkShell {
           name = "c-programming-ltlactus";
           shellHook = "echo ${greeting}";
-          buildInputs = [ cmake gnumake pkg-config glib ];
+          buildInputs = [ cmake gnumake pkg-config glib irony-server ];
+        };
+      model = with pkgs;
+        mkShell {
+          name = "model-spec-ltlactus";
+          shellHook = "echo ${greeting}";
+          buildInputs = [ lean4 ];
         };
     };
   };

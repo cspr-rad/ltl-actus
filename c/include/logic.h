@@ -1,8 +1,8 @@
 #ifndef __LOGIC_H
 #define __LOGIC_H
 
-#include "pam.h"    // Make sure to include the path to the definition of Pam
-#include <stdlib.h> // For dynamic memory mgmt
+#include "pam.h"
+#include <stdlib.h>
 
 typedef enum {
   VAR,
