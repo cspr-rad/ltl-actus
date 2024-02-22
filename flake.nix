@@ -28,6 +28,7 @@
         nci.flakeModule
         ./nix/crates
         ./nix/cmake
+        ./nix/model
         ./nix/shells.nix
         ./nix/comms
         fmt.flakeModule
