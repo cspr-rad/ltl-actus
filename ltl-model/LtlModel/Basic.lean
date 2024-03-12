@@ -30,4 +30,6 @@ open IO
 
 end Timestamp
 
+#check id
+
 def hello := "world"

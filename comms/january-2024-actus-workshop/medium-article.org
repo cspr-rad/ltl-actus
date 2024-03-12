@@ -1,7 +1,9 @@
 #+title: Can we formally verify ACTUS traces with linear temporal logic?
 
 * Introduction
-The algorithmic contract types unified standard (ACTUS) is a focus here at Casper Association because we're driving toward a future of auditable and interpretable financial execution traces. A financial execution trace is a sequence of cashflows that fulfill a financial contract between counterparties. Such a trace would be auditable and interpretable if we could reliably predict which sets of cash flows would validly close out the contract based on piping together a few principles.
+The Algorithmic Contract Types Unified Standards, commonly known as ACTUS, introduces a significant advancement in finance by aiming to create a unified framework for financial contracts. Its primary goal is to simplify the intricate and varied landscape of financial agreements through the implementation of standardized, algorithm-based protocols. The emphasis is not merely on streamlining transactions but on enhancing the transparency and efficiency of financial operations. ACTUS strives to convert the complex nature of financial contracts into widely accepted standards, thereby facilitating a more transparent and secure financial market environment. Through this approach, ACTUS addresses current issues while also preparing for the future demands of an evolving financial sector.
+
+ACTUS is a focus here at Casper Association because we're driving toward a future of auditable and interpretable financial execution traces. A financial execution trace is a sequence of cashflows that fulfill a financial contract between counterparties. Such a trace would be auditable and interpretable if we could reliably predict which sets of cash flows would validly close out the contract based on piping together a few principles.
 
 One component of this is to make ACTUS runnable in a zero knowledge environment, which will be discussed in other posts. Another component is to make ACTUS *formally verifiable*.
 
@@ -9,35 +11,55 @@ Formal verification is a kind of quality assurance process, like testing but on 
 
 To study finance in this environment, in today's post I will propose we view financial contracts as components in a reactive system. An example reactive system is a traffic light apparatus: it's behavior is specified as states' responses to an input stream (the flow of cars seen by cameras). A simple tool to study this in a formal verification environment is a type of logic called *linear temporal logic*.
 
-** Formal logic: the basis of formal verification
-In today's post, we will look at how a particular kind of logic-- called linear temporal logic -- may be a usable specification language for normative descriptions of how ACTUS ought to behave. With that in sight, let's review the basics of formal logic
-*** Argument's structure
-Formal logic is the study of the structure of arguments. Two of the big ones are modus ponens and modus tollens.
+Diving deeper into the bedrock of formal verification, we pivot our focus towards a specific branch of logic—linear temporal logic (LTL)—which serves as an ideal specification language for normatively describing the expected behavior of financial contracts under the ACTUS framework. Before we delve into the intricacies of LTL, it's essential to establish a foundational understanding of formal logic, as it's the scaffold upon which LTL builds its temporal extensions.
+* The Structure of Arguments in Formal Logic
 
-In modus ponens, we derive a conclusion from an implication and a premise. So if we know that snow implies coldness, and we know it is snowing, then we combine these together with modus ponens to conclude that it is cold.
+Formal logic, at its heart, is concerned with the analysis and construction of argument structures. It offers a systematic approach to deducing truths and falsehoods from a given set of premises through well-defined reasoning patterns. Two fundamental reasoning patterns that exemplify the power of formal logic are modus ponens and modus tollens.
 
-In modus tollens, we kinda flip it around. We know that if it is snowing then it is cold, but we notice it is not cold outside. Therefore, we conclude that it is not snowing.
-*** The connectives
--  -$P \land Q$ is true if both $P$ is true and $Q$ is true.
-- $P \lor Q$ is true if at least one of $P$ or $Q$ is true.
-- $\neg P$ is true if $P$ is not true.
+- *Modus Ponens*: This form of argument holds that if a certain condition is true, then a consequent outcome must also be true. For example, if we establish that "if it snows, then it is cold" (the implication) and we observe that "it is snowing" (the premise), modus ponens allows us to logically conclude that "it is cold."
+- *Modus Tollens*: In contrast, modus tollens takes on a somewhat inverse approach. It posits that if an outcome is expected under a certain condition and the outcome does not occur, the initial condition must not have been met. Using the previous example in reverse, if we know "if it snows, then it is cold" and we observe that "it is not cold," modus tollens leads us to conclude that "it is not snowing."
+
+** Connectives in Formal Logic
+
+At the core of formal logic are the connectives, the operators that allow us to combine simpler statements into more complex expressions. Understanding these connectives is crucial for constructing logical expressions that can accurately model the behavior of systems, including financial contracts.
+
+- Conjunction ($\land$): This connective asserts that a combined statement is true if, and only if, both of its component statements are true. For instance, "$P \land Q$" translates to the assertion that both $P$ and $Q$ must be true for the overall statement to hold.
+- Disjunction ($\lor$): In contrast, the disjunction connective allows for flexibility by stating that the overall expression is true if at least one of its components is true. Thus, "$P \lor Q$" is satisfied if either $P$, $Q$, or both are true.
+- Negation ($\neg$): Negation serves as the logical inversion, flipping the truth value of a statement. If $P$ is true, then "$\neg P$" (not $P$) is false, and vice versa. This connective is fundamental in expressing conditions or outcomes that should be avoided or are not desired.
+
+With these building blocks of formal logic in hand, we can begin to appreciate how LTL extends these principles into the temporal domain, enabling the specification and verification of properties over time. This transition from static to dynamic analysis is crucial for capturing the evolving nature of financial contracts, making LTL an invaluable tool in the realm of formal verification within the financial industry.
+
 * Linear temporal logic (LTL)
-Linear temporal logic extends the basic logic with extra operators that act on propositions like $P$ and $Q$ to make the logic aware of /time/. So instead of just reasoning about what's true, you can reason about when things are true depending on your representation of time.
+The choice of Linear Temporal Logic (LTL) for the formal verification of financial contracts, particularly within the ACTUS framework, is both deliberate and strategic. At its essence, LTL offers a robust mechanism for modeling systems that are inherently time-dependent, which is a critical feature of financial agreements. Unlike traditional logic systems that evaluate the truthfulness of statements in a static context, LTL introduces the dimension of time into the logical framework. This allows for the precise specification of properties that must hold over sequences of events or actions, such as those found in financial contracts.
+
+Financial contracts are not static entities; they evolve over time, responding to a myriad of external and internal conditions. Payments, interest accruals, and compliance with regulatory requirements are all temporal events that need to be accurately modeled and verified against the contract's terms. LTL excels in this environment by providing operators that describe temporal relationships—such as "always" ($\Box$), "eventually" ($\Diamond$), and "until" ($U$)—allowing for the expression of complex, time-dependent behaviors in a concise and mathematically rigorous way.
+
+Comparatively, other formal verification methods might not inherently incorporate the concept of time or might do so in a less intuitive or more cumbersome manner. For instance, traditional propositional or predicate logic can assert what is true at a given moment but lacks the native constructs to express how these truths evolve over time. Automated theorem proving and model checking offer powerful tools for verifying properties of systems, but when it comes to capturing the temporal aspects of financial contracts, LTL's specific focus on time-based properties makes it a more natural fit.
+
+Moreover, the simplicity and expressiveness of LTL make it accessible for specifying and verifying the expected behaviors of financial contracts without getting bogged down in overly complex or abstract formalisms. This balance between power and usability underpins the suitability of LTL for modeling the dynamic nature of financial contracts within the ACTUS framework, ensuring that contracts not only meet their specified terms at every point in time but also adapt to the evolving landscape of financial transactions.
+
+LTL extends the basic logic with extra operators that act on propositions like $P$ and $Q$ to make the logic aware of /time/. So instead of just reasoning about what's true, you can reason about when things are true depending on your representation of time.
 - $\Box P$ is a proposition whenever $P$ is a proposition, and it is true only if $P$ is true regardless of timestep. This operator is called /always/.
 - $\Diamond P$ is a proposition whenever $P$ is a proposition, and it is true only if $P$ becomes true eventually. This operator is called /eventually/, following from modal logic's "possibly".
 ** Example specification in linear temporal logic: traffic lights
-To express that a traffic light should never be green in all directions, write $\Box (\text{(northGreen \land \text{southGreen}) \rightarrow \neg(\text{eastGreen} \lor \text{westGreen}))$
+To express that a traffic light should never be green in all directions, write $\Box (\text{northGreen} \land \text{southGreen}) \rightarrow \neg(\text{eastGreen} \lor \text{westGreen}))$
 
 To express that a traffic light should eventually turn green in all directions, write $\Box \Diamond \textit{l}$ for each of the traffic lights $\textit{l}$, and conjoin them together with the $\land$ connective.
 
-* LTL ACTUS (with demo code)
-One of the key ACTUS primitives is the principal at maturity, or PAM, which is a simple kind of loan. In a PAM contract, the borrower pays interest periodically but only pays the principal at the end of the term. This can be readily modeled with LTL:
+* LTL for ACTUS
+Exploring the application of Linear Temporal Logic (LTL) within the Algorithmic Contract Types Unified Standards (ACTUS) framework offers intriguing insights into how we can model and verify financial contracts. A prime example of this is the Principal at Maturity (PAM) contract type, which is essentially a straightforward loan structure. In a PAM contract, the borrower is obligated to make periodic interest payments throughout the loan term, with the principal amount being repaid at the contract's conclusion. This setup is perfectly suited for representation through LTL, allowing us to depict the financial dynamics and obligations over time.
+
+To illustrate, consider the LTL expression for total repayment in a PAM contract:
 - $\Diamond$ (~total_repayment = principal * (1 + interest_rate) * months~)
 
-Additionally, we would like to show that the terms are fixed through the length of the contract.
+This expression encapsulates the idea that eventually, the total repayment amount will equal the principal plus the accumulated interest over the specified months. It's a succinct way to represent the culmination of the loan agreement in terms of LTL.
+
+Moreover, it's crucial to ensure that the terms of the contract remain constant throughout its duration. This can be expressed as:
 - $\Box$ (~terms = {principal: 1000, interest_rate: 0.05, months: 24}~)
 
-When I rolled a quick LTL in rust, I was able to express PAM as an ltl specification like so
+This signifies that the contract terms—comprising the principal, interest rate, and term length—are fixed and unchanged over the life of the loan, a fundamental aspect of PAM contracts.
+
+Delving into the practical implementation, let's consider a Rust function that models a PAM contract using LTL specifications. The function ~contract~ takes as input the principal amount, the interest rate, and the loan term (in months), and returns a ~PamProp~, an object representing the PAM contract's properties.
 
 #+BEGIN_SRC rust
 fn contract(principal: Decimal, interest_rate: Decimal, months: usize) -> PamProp {
@@ -51,4 +73,15 @@ fn contract(principal: Decimal, interest_rate: Decimal, months: usize) -> PamPro
 }
 #+END_SRC
 
-Notice the ~term_set~ is constructed by the `always` function (which under the hood is a ~TemporalProp::Always~ variant), and ~total_repayment_final~ by the ~eventually~ function (under the hood is ~TemporalProp::Eventually~ variant).
+In this code snippet, ~term_set~ is derived using the ~always~ function, indicating that the terms of the contract are constant throughout its lifecycle. This is reflected in the ~TemporalProp::Always~ variant internally. Similarly, ~total_repayment_final~ utilizes the ~eventually~ function to signify that the total repayment condition will be satisfied at the contract's conclusion, represented by the ~TemporalProp::Eventually~ variant.
+
+By integrating LTL into the ACTUS framework through examples like the PAM contract, we demonstrate a powerful method for formally specifying and verifying the temporal aspects of financial agreements. This approach not only enhances our understanding of such contracts but also facilitates their rigorous analysis and validation in a formal verification environment.
+
+* Conclusion
+The integration of Linear Temporal Logic (LTL) within the Algorithmic Contract Types Unified Standards (ACTUS) framework represents a significant stride towards achieving a more transparent, reliable, and secure financial ecosystem. By leveraging the expressive power of LTL to model and verify the temporal aspects of financial contracts, we can enhance the clarity and predictability of these agreements, reducing the potential for misinterpretation or disputes.
+
+The Principal at Maturity (PAM) contract example showcases the practical application of LTL in defining and validating the expected behavior of a common financial instrument. By encoding the contract's terms and repayment conditions using LTL operators, we can formally specify and verify the contract's compliance with its intended outcomes over time. This approach not only strengthens the contract's integrity but also facilitates its integration into the broader ACTUS framework, promoting standardization and interoperability across financial institutions.
+
+As the financial landscape continues to evolve, with increasing complexity and the emergence of new technologies, the importance of formal verification methods like LTL will only grow. By providing a rigorous and systematic approach to modeling and verifying financial contracts, LTL empowers stakeholders to navigate this dynamic environment with greater confidence and trust. The Casper Association's focus on integrating LTL within the ACTUS framework is a testament to its commitment to building a more resilient, efficient, and equitable financial system.
+
+In conclusion, the application of Linear Temporal Logic in the context of the Algorithmic Contract Types Unified Standards marks a significant milestone in the journey towards a more transparent and reliable financial landscape. By harnessing the power of formal verification, we can not only enhance the integrity of individual financial contracts but also contribute to the development of a more robust and trustworthy financial ecosystem as a whole. As we continue to explore and refine these techniques, we lay the foundation for a future where financial agreements are not just legally binding but also mathematically verifiable, ushering in a new era of clarity, efficiency, and trust in the world of finance.
