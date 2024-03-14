@@ -1,35 +1,43 @@
-import LtlModel.Time
+import LtlModel.TimeFFI
+import LtlModel.Logic
+import Lean.Data.AssocList
 
-inductive Proposition (T : Type) : Type where
-  | var : T → Proposition T
-  | cmp : T → T → Proposition T
-  | not : Proposition T → Proposition T
-  | or : Proposition T → Proposition T → Proposition T
+namespace Time
+  inductive Timestamp : Type where
+    | time : UInt64 → Timestamp
+    | infinity : Timestamp
+  structure IntervalTrue where
+    start_t : Timestamp
+    end_t : Timestamp
 
-inductive TemporalProposition (T : Type)
-  | term : Proposition T → TemporalProposition T
-  | and : TemporalProposition T → TemporalProposition T → TemporalProposition T
-  | always : TemporalProposition T → TemporalProposition T
-  | eventually : TemporalProposition T → TemporalProposition T
-  | release : TemporalProposition T → TemporalProposition T → TemporalProposition T
-  | until : TemporalProposition T → TemporalProposition T → TemporalProposition T
+  open Timestamp (time infinity)
 
-structure Timestamp where
-  time : Int64
+  def contains (interval : IntervalTrue) (timestamp : Timestamp) : Bool :=
+    match timestamp, interval.start_t, interval.end_t with
+    | infinity, _, infinity => true
+    | infinity, _, _ => false
+    | time _, infinity, infinity => true
+    | time x, time s, infinity => s <= x
+    | time x, infinity, time e => x <= e
+    | time x, time s, time e => s <= x && x <= e
 
-namespace Timestamp
+end Time
 
-open IO
+namespace State
+  open Time
+  variable [BEq T] [Hashable T] (T : Type) [TermSet T]
+  def StateStore : Type := Lean.AssocList (Proposition T) (List IntervalTrue)
 
--- def new (optTime : Option Int64) : IO Timestamp :=
---   match optTime with
---   | some t => pure { time := t }
---   | none => do
---     t <- currentTime
---     pure { time := t }
+  def isTrueAt (state : StateStore T) (p : Proposition T) (t : Timestamp) : Bool :=
+    match state.find? p with
+    | some intervals => intervals.any (fun interval => Time.contains interval t)
+    | none => false
+end State
 
-end Timestamp
-
-#check id
+namespace LinearTemporalLogic
+  variable (T : Type)
+  open Time
+  open TemporalLogic
+end LinearTemporalLogic
 
 def hello := "world"
