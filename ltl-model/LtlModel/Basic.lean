@@ -25,7 +25,7 @@ end Time
 
 namespace State
   open Time
-  variable [BEq T] [Hashable T] (T : Type) [TermSet T]
+  variable (T : Type) [TermSet T]
   def StateStore : Type := Lean.AssocList (Proposition T) (List IntervalTrue)
 
   def isTrueAt (state : StateStore T) (p : Proposition T) (t : Timestamp) : Bool :=

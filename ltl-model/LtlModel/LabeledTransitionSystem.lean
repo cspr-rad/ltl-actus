@@ -4,9 +4,5 @@ structure LTS where
   action : Type
   initial : List state
   transition : state -> action -> state -> Prop
-  atomic_propositions : Type
-  labelling : state -> List atomic_propositions
-
-namespace LTS
-
-end LTS
+  atomic_proposition : Type
+  labelling : state -> List atomic_proposition
