@@ -1,63 +1,98 @@
-import Init.Data.String.Basic
+import LtlModel.LabeledTransitionSystem
 
--- LTL formula datatype
-inductive LTL (α : Type)
-| tt                      -- true
-| ff                      -- false
-| atom (a : α)            -- atomic proposition
-| not (φ : LTL α)         -- negation
-| and (φ₁ φ₂ : LTL α)     -- conjunction
-| or (φ₁ φ₂ : LTL α)      -- disjunction
-| next (φ : LTL α)        -- next
-| until (φ₁ φ₂ : LTL α)   -- until
-| release (φ₁ φ₂ : LTL α) -- release
+class TermSet (T : Type u) extends BEq T
 
--- Infinite word type
-def Word (α : Type) := Nat → α
+variable [BEq T] (T : Type) [TermSet T]
 
--- LTL semantics
-def satisfies {α : Type} (w : Word α) : LTL α → Prop
-| LTL.tt           => True
-| LTL.ff           => False
-| (LTL.atom a)     => w 0 = a
-| (LTL.not φ)      => ¬ satisfies w φ
-| (LTL.and φ₁ φ₂)  => satisfies w φ₁ ∧ satisfies w φ₂
-| (LTL.or φ₁ φ₂)   => satisfies w φ₁ ∨ satisfies w φ₂
-| (LTL.next φ)     => satisfies (λ n => w (n+1)) φ
-| (LTL.until φ₁ φ₂) => ∃ i, satisfies (λ n => w (n+i)) φ₂ ∧ ∀ j, j < i -> satisfies (λ n => w (n+j)) φ₁
-| (LTL.release φ₁ φ₂) => ∀ i, satisfies (λ n => w (n+i)) φ₂ ∨ ∃ j, j < i -> satisfies (λ n => w (n+j)) φ₁
+inductive Proposition (T : Type) : Type where
+  | tt : Proposition T
+  | var : T → Proposition T
+  -- | cmp : T → T → Proposition T
+  | iseq : T → T → Proposition T
+  | not : Proposition T → Proposition T
+  | or : Proposition T → Proposition T → Proposition T
+deriving BEq, Hashable
 
-notation:50 w " ⊨ " φ => satisfies w φ
+inductive TemporalProposition (T : Type) : Type where
+  | term : Proposition T → TemporalProposition T
+  | and : TemporalProposition T → TemporalProposition T → TemporalProposition T
+  | always : TemporalProposition T → TemporalProposition T
+  | eventually : TemporalProposition T → TemporalProposition T
+  | release : TemporalProposition T → TemporalProposition T → TemporalProposition T
+  | until : TemporalProposition T → TemporalProposition T → TemporalProposition T
+deriving BEq, Hashable
 
--- Example usage
-def example1 : Word Nat := λ n => if n % 2 = 0 then 0 else 1
+-- def unlift (p : TemporalProposition T) : option (Proposition T) :=
+--   match p with
+--   | TemporalProposition.term p => some p
+--   | TemporalProposition.always p => unlift p
+--   | TemporalProposition.eventually p => unlift p
+--   | _ => none
 
-/- these examples won't work because not Decidabl propositions
-#eval example1 ⊨ (LTL.until (LTL.atom 1) (LTL.atom 0)) -- true
-#eval example1 ⊨ (LTL.release (LTL.atom 0) (LTL.next (LTL.atom 1))) -- true
--/
+namespace TemporalLogic
 
--- Define the transition system
-def S : Type := -- Define the set of states
-def → : S → S → Prop := -- Define the transition relation
-def s₀ : S := -- Define the initial state (optional)
+  syntax "[[" term "]]" : term
+  syntax "tt" : term
+  syntax "ff" : term
+  syntax "~" term : term
+  syntax:60 term "or" term : term
+  -- syntax:60 term "<<" term : term
+  syntax:60 term "===" term : term
+  syntax:60 term "and" term : term
+  syntax "□" term : term
+  syntax "◇" term : term
+  syntax:60 term "R" term : term
+  syntax:60 term "U" term : term
 
--- Define the set of observable events or actions
-def Σ : Type := -- Define the set of observable events or actions
+  open Proposition
+  open TemporalProposition
 
--- Check if a word is a valid path in the TS
-def is_valid_path (w : Nat → S) : Prop :=
-  -- Check if consecutive states are connected by valid transitions
-  -- and optionally check if the word starts from s₀
+  macro_rules
+    | `([[$p]]) => `(TemporalProposition.term $p)
+    | `(tt) => `(TemporalProposition.term (Proposition.tt))
+    | `(ff) => `(TemporalProposition.term (Proposition.not (Proposition.tt)))
+    | `(~ $p) => `(TemporalProposition.term (Proposition.not $p))
+    | `($p or $q) => `(TemporalProposition.term (Proposition.or $p $q))
+    -- | `($p << $q) => `(TemporalProposition.term (Proposition.cmp $p $q))
+    | `($p === $q) => `(TemporalProposition.term (Proposition.iseq $p $q))
+    | `($p and $q) => `(TemporalProposition.and $p $q)
+    | `(□ $p) => `(TemporalProposition.always $p)
+    | `(◇ $p) => `(TemporalProposition.eventually $p)
+    | `($p R $q) => `(TemporalProposition.release $p $q)
+    | `($p U $q) => `(TemporalProposition.until $p $q)
 
--- Extract the trace from a valid path
-def trace_of_path (w : Nat → S) (h : is_valid_path w) : List Σ :=
-  -- Map each transition in the path to its corresponding observable event or action
+end TemporalLogic
 
--- Filter words to obtain valid paths
-def valid_paths (words : List (Nat → S)) : List (Nat → S) :=
-  words.filter is_valid_path
+namespace WordSemantics
+  open TemporalLogic
+-- def satisfies (lts : LTS) (phi : TemporalProposition lts.atomic_proposition): Prop :=
+-- match phi with
+-- | [[x]] => match x with
+--   | Proposition.tt => true
+--   | Proposition.var x => x ∈ lts.state
+--   | Proposition.cmp x y => exists (a : lts.action), lts.transition x a y
+--   | Proposition.not x => ¬ (satisfies lts (TemporalLogic.term x))
+--   | Proposition.or x y => satisfies lts (TemporalLogic.term x) ∨ satisfies lts (TemporalLogic.term y)
+-- | x and y => satisfies lts x ∧ satisfies lts y
+end WordSemantics
 
--- Extract traces from the valid paths
-def traces_of_words (words : List (Nat → S)) : List (List Σ) :=
-  valid_paths words |>.map (λ w => trace_of_path w (is_valid_path_of_valid_path w))
+namespace PathSemantics
+  open TemporalLogic
+  variable (T : Type) [TermSet T]
+
+  def Sigma : Type := List (List T)
+
+  def satisfaction (sigma : Sigma T) (phi : TemporalProposition T) : Prop :=
+  match phi with
+  | [[p]] => match p with
+    | Proposition.tt => true
+    | Proposition.var p => (sigma.get? 0 >>= fun a => pure (p ∈ a)).getD false
+    | Proposition.iseq p q => (sigma.get? 0 >>= fun _ => pure (p = q)).getD false
+    | Proposition.not p => ¬ satisfaction sigma (TemporalProposition.term p)
+    | Proposition.or p q => satisfaction sigma (TemporalProposition.term p) ∨ satisfaction sigma (TemporalProposition.term q)
+  | p and q => satisfaction sigma p ∧ satisfaction sigma q
+  | □ p => ∀ (i : Nat), satisfaction (sigma.drop i) p
+  | ◇ p => ∃ (i : Nat), satisfaction (sigma.drop i) p
+  | p R q => ∃ (i : Nat), satisfaction (sigma.drop i) q ∧ ∀ (j : Nat), j < i → satisfaction (sigma.drop j) p
+  | p U q => ∃ (i : Nat), satisfaction (sigma.drop i) q ∧ ∀ (j : Nat), j < i → satisfaction (sigma.drop j) p
+end PathSemantics
