@@ -1,5 +1,5 @@
 ---
-title:  Towards Formally Verified Finance with Linear Temporal Logic
+title: Towards Formally Verified Finance with Linear Temporal Logic
 subtitle: A financial contract is a component in a reactive system
 author: Quinn Dougherty
 institute: Casper Association - R&D
