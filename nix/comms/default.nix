@@ -15,6 +15,10 @@
           pygments = pkgs.python311Packages.pygments;
           inherit (inputs) beamer-theme-serokell self;
         };
+      whitepaper = import ./whitepaper {
+        inherit (inputs) self;
+        inherit pkgs;
+      };
     };
   };
 }
