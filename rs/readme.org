@@ -1,0 +1,13 @@
+#+TITLE: LTL ACTUS
+
+** Example (WIP): Execution trace of a loan
+
+No dependencies between tests, but the log file will be written correctly if the runner is single threaded.
+
+#+BEGIN_SRC
+nix develop ./../#rs
+$ RUST_LOG=debug cargo test -- --test-threads=1
+$ cat execution_trace.log
+#+END_SRC
+
+This is a *demo* in a *toy version of ACTUS*
