@@ -1,98 +1,56 @@
-import LtlModel.LabeledTransitionSystem
+import Lean.Data.HashSet
 
-class TermSet (T : Type u) extends BEq T
+class TermSet (T : Type) extends BEq T, Hashable T
 
-variable [BEq T] (T : Type) [TermSet T]
+namespace LinearTemporalLogic
+  variable {T : Type} [TermSet T]
 
-inductive Proposition (T : Type) : Type where
-  | tt : Proposition T
-  | var : T → Proposition T
-  -- | cmp : T → T → Proposition T
-  | iseq : T → T → Proposition T
-  | not : Proposition T → Proposition T
-  | or : Proposition T → Proposition T → Proposition T
-deriving BEq, Hashable
+  inductive LTL (T : Type) : Type where
+  | ltt : LTL T
+  | atom : T → LTL T
+  | negate : LTL T → LTL T
+  | conjunct : LTL T → LTL T → LTL T
+  | next : LTL T → LTL T
+  | until : LTL T → LTL T → LTL T
+  deriving Hashable
 
-inductive TemporalProposition (T : Type) : Type where
-  | term : Proposition T → TemporalProposition T
-  | and : TemporalProposition T → TemporalProposition T → TemporalProposition T
-  | always : TemporalProposition T → TemporalProposition T
-  | eventually : TemporalProposition T → TemporalProposition T
-  | release : TemporalProposition T → TemporalProposition T → TemporalProposition T
-  | until : TemporalProposition T → TemporalProposition T → TemporalProposition T
-deriving BEq, Hashable
+  instance : Inhabited (LTL T) where
+    default := LTL.ltt
 
--- def unlift (p : TemporalProposition T) : option (Proposition T) :=
---   match p with
---   | TemporalProposition.term p => some p
---   | TemporalProposition.always p => unlift p
---   | TemporalProposition.eventually p => unlift p
---   | _ => none
+  notation "[[" x "]]" => LTL.atom x
+  notation "~" φ => LTL.negate φ
+  notation φ "and" ψ => LTL.conjunct φ ψ
+  notation "◯" φ => LTL.next φ
+  notation φ "U" ψ => LTL.until φ ψ
+  notation "ltt" => LTL.ltt
 
-namespace TemporalLogic
+  def eventually (φ : LTL T) : LTL T := ltt U φ
+  def always (φ : LTL T) : LTL T := ~ (eventually (~ φ))
+  def or (φ ψ : LTL T) : LTL T := ~ (~ φ and ~ ψ)
+  def implies (φ ψ : LTL T) : LTL T := or (~ φ) ψ
+  def release (φ ψ : LTL T) : LTL T := ~ ((~ φ) U (~ ψ))
 
-  syntax "[[" term "]]" : term
-  syntax "tt" : term
-  syntax "ff" : term
-  syntax "~" term : term
-  syntax:60 term "or" term : term
-  -- syntax:60 term "<<" term : term
-  syntax:60 term "===" term : term
-  syntax:60 term "and" term : term
-  syntax "□" term : term
-  syntax "◇" term : term
-  syntax:60 term "R" term : term
-  syntax:60 term "U" term : term
+  notation "◇" φ => eventually φ
+  notation "□" φ => always φ
+  notation φ "or" ψ => or φ ψ
+  notation φ "implies" ψ => implies φ ψ
+  notation φ "R" ψ => release φ ψ
 
-  open Proposition
-  open TemporalProposition
+end LinearTemporalLogic
 
-  macro_rules
-    | `([[$p]]) => `(TemporalProposition.term $p)
-    | `(tt) => `(TemporalProposition.term (Proposition.tt))
-    | `(ff) => `(TemporalProposition.term (Proposition.not (Proposition.tt)))
-    | `(~ $p) => `(TemporalProposition.term (Proposition.not $p))
-    | `($p or $q) => `(TemporalProposition.term (Proposition.or $p $q))
-    -- | `($p << $q) => `(TemporalProposition.term (Proposition.cmp $p $q))
-    | `($p === $q) => `(TemporalProposition.term (Proposition.iseq $p $q))
-    | `($p and $q) => `(TemporalProposition.and $p $q)
-    | `(□ $p) => `(TemporalProposition.always $p)
-    | `(◇ $p) => `(TemporalProposition.eventually $p)
-    | `($p R $q) => `(TemporalProposition.release $p $q)
-    | `($p U $q) => `(TemporalProposition.until $p $q)
-
-end TemporalLogic
-
-namespace WordSemantics
-  open TemporalLogic
--- def satisfies (lts : LTS) (phi : TemporalProposition lts.atomic_proposition): Prop :=
--- match phi with
--- | [[x]] => match x with
---   | Proposition.tt => true
---   | Proposition.var x => x ∈ lts.state
---   | Proposition.cmp x y => exists (a : lts.action), lts.transition x a y
---   | Proposition.not x => ¬ (satisfies lts (TemporalLogic.term x))
---   | Proposition.or x y => satisfies lts (TemporalLogic.term x) ∨ satisfies lts (TemporalLogic.term y)
--- | x and y => satisfies lts x ∧ satisfies lts y
-end WordSemantics
-
-namespace PathSemantics
-  open TemporalLogic
+namespace LTLSemantics
+  open LinearTemporalLogic
   variable (T : Type) [TermSet T]
 
-  def Sigma : Type := List (List T)
+  def Sigma : Type := List (Lean.HashSet T)
 
-  def satisfaction (sigma : Sigma T) (phi : TemporalProposition T) : Prop :=
-  match phi with
-  | [[p]] => match p with
-    | Proposition.tt => true
-    | Proposition.var p => (sigma.get? 0 >>= fun a => pure (p ∈ a)).getD false
-    | Proposition.iseq p q => (sigma.get? 0 >>= fun _ => pure (p = q)).getD false
-    | Proposition.not p => ¬ satisfaction sigma (TemporalProposition.term p)
-    | Proposition.or p q => satisfaction sigma (TemporalProposition.term p) ∨ satisfaction sigma (TemporalProposition.term q)
+  def satisfaction (sigma: Sigma T) (φ : LTL T) : Prop :=
+  match φ with
+  | ltt => true
+  | [[x]] => (sigma.get? 0 >>= fun a => pure (a.contains x)).getD false
+  | ~ p => ¬ (satisfaction sigma p)
   | p and q => satisfaction sigma p ∧ satisfaction sigma q
-  | □ p => ∀ (i : Nat), satisfaction (sigma.drop i) p
-  | ◇ p => ∃ (i : Nat), satisfaction (sigma.drop i) p
-  | p R q => ∃ (i : Nat), satisfaction (sigma.drop i) q ∧ ∀ (j : Nat), j < i → satisfaction (sigma.drop j) p
-  | p U q => ∃ (i : Nat), satisfaction (sigma.drop i) q ∧ ∀ (j : Nat), j < i → satisfaction (sigma.drop j) p
-end PathSemantics
+  | ◯ p => satisfaction (sigma.drop 0) p
+  | p U q => ∃ (j : Nat), satisfaction (sigma.drop j) q ∧ (∀ (i : Nat), i < j -> satisfaction (sigma.drop i) p)
+
+end LTLSemantics

@@ -1,3 +1,5 @@
+-- one of claude's takes
+
 import Init.Data.String.Basic
 
 -- LTL formula datatype

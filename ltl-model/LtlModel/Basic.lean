@@ -23,21 +23,19 @@ namespace Time
 
 end Time
 
-namespace State
-  open Time
-  variable (T : Type) [TermSet T]
-  def StateStore : Type := Lean.AssocList (Proposition T) (List IntervalTrue)
+-- namespace State
+--   open Time
+--   variable (T : Type) [TermSet T]
+--   def StateStore : Type := Lean.AssocList (Proposition T) (List IntervalTrue)
+--
+--   def isTrueAt (state : StateStore T) (p : Proposition T) (t : Timestamp) : Bool :=
+--     match state.find? p with
+--     | some intervals => intervals.any (fun interval => Time.contains interval t)
+--     | none => false
+-- end State
 
-  def isTrueAt (state : StateStore T) (p : Proposition T) (t : Timestamp) : Bool :=
-    match state.find? p with
-    | some intervals => intervals.any (fun interval => Time.contains interval t)
-    | none => false
-end State
-
-namespace LinearTemporalLogic
-  variable (T : Type)
-  open Time
-  open TemporalLogic
-end LinearTemporalLogic
+variable (T : Type)
+open Time
+open LinearTemporalLogic
 
 def hello := "world"
