@@ -1,5 +1,5 @@
-import LtlModel.TimeFFI
-import LtlModel.Logic
+import LtlActus.TimeFFI
+import LtlActus.Logic
 import Lean.Data.AssocList
 
 namespace Time

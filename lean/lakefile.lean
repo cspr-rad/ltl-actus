@@ -1,12 +1,12 @@
 import Lake
 open System Lake DSL
 
-package «ltl-model» where
+package «ltl-actus» where
   -- moreLinkArgs := #["-L."]
   -- add package configuration options here
   precompileModules := true
 
-lean_lib «LtlModel» where
+lean_lib «LtlActus» where
   -- add library configuration options here
 
 target time.o pkg : FilePath := do
@@ -21,5 +21,5 @@ extern_lib libleantime pkg := do
   buildStaticLib (pkg.nativeLibDir / name) #[timeO]
 
 @[default_target]
-lean_exe «ltl-model» where
+lean_exe «ltl-actus» where
   root := `Main

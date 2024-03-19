@@ -1,7 +1,7 @@
 -- A rough draft, closest to the rust implementation
 
 import Lean.Data.HashSet
-import LtlModel.LabeledTransitionSystem
+import LtlActus.LabeledTransitionSystem
 
 class TermSet (T : Type u) extends BEq T, Hashable T
 
