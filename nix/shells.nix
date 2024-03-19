@@ -1,6 +1,6 @@
 { ... }: {
   perSystem = { config, pkgs, ... }: {
-    devShells = let greeting = "Welcome to ACTUS in linear temporal logic";
+    devShells = let greeting = "ACTUS in linear temporal logic";
     in {
       rs = config.nci.outputs.ltl-actus.devShell;
       c = with pkgs;
@@ -9,9 +9,9 @@
           shellHook = "echo ${greeting}";
           buildInputs = [ cmake gnumake pkg-config glib irony-server ];
         };
-      model = with pkgs;
+      lean = with pkgs;
         mkShell {
-          name = "model-spec-ltlactus";
+          name = "ltlactus-spec";
           shellHook = "echo ${greeting}";
           buildInputs = [ lean4 ];
         };
