@@ -1,6 +1,5 @@
 import Lean.Data.HashSet
-
-class TermSet (T : Type) extends BEq T, Hashable T
+import LtlActus.Types
 
 namespace LinearTemporalLogic
   variable {T : Type} [TermSet T]
@@ -44,13 +43,15 @@ namespace LTLSemantics
 
   def Sigma : Type := List (Lean.HashSet T)
 
-  def satisfaction (sigma: Sigma T) (φ : LTL T) : Prop :=
+  def satisfaction (σ: Sigma T) (φ : LTL T) : Prop :=
   match φ with
   | ltt => true
-  | [[x]] => (sigma.get? 0 >>= fun a => pure (a.contains x)).getD false
-  | ~ p => ¬ (satisfaction sigma p)
-  | p and q => satisfaction sigma p ∧ satisfaction sigma q
-  | ◯ p => satisfaction (sigma.drop 0) p
-  | p U q => ∃ (j : Nat), satisfaction (sigma.drop j) q ∧ (∀ (i : Nat), i < j -> satisfaction (sigma.drop i) p)
+  | [[x]] => (σ.get? 0 >>= fun a => pure (a.contains x)).getD false
+  | ~ p => ¬ (satisfaction σ p)
+  | p and q => satisfaction σ p ∧ satisfaction σ q
+  | ◯ p => satisfaction (σ.drop 0) p
+  | p U q => ∃ (j : Nat), satisfaction (σ.drop j) q ∧ (∀ (i : Nat), i < j -> satisfaction (σ.drop i) p)
+
+  notation:70 σ "⊨" φ => satisfaction σ φ
 
 end LTLSemantics

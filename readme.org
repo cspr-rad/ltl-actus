@@ -4,7 +4,7 @@ The [[https://actusfrf.org][algorithmic contract types unified standard]] execut
 
 *Prototype*.
 
-* ~ltl-model~
+* ~lean~
 
 The current lean codebase. An ACTUS term set is an atomic proposition.
 
