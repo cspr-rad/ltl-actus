@@ -14,7 +14,7 @@ namespace LinearTemporalLogic
   deriving Hashable
 
   instance : Inhabited (LTL T) where
-    default := LTL.ltt
+    default := LTL.negate LTL.ltt
 
   notation "[[" x "]]" => LTL.atom x
   notation "~" φ => LTL.negate φ
