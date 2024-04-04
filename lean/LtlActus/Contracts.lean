@@ -1,12 +1,22 @@
 import LtlActus.Types
 import LtlActus.Logic
 
+structure tms where
+  principal : Money
+  interest_rate : Scalar
+  deriving BEq, Hashable, Repr
+
+/-! # ACTUS Contracts -/
+/- A contract is of signaturea -/
+/- * (Terms Event : Type) -/
+/- * (T : Type) which wraps the first two.-/
+/- * A linear temporal logic formula over atomic propositions T -/
 namespace PAM
 
   structure Terms where
-    principal : Int -- Money
-    interest_rate : Int -- Scalar
-    maturity : UInt64 -- Timestamp
+    principal : Money -- Money
+    interest_rate : Scalar -- Scalar
+    maturity : Timestamp -- Timestamp
     deriving BEq, Hashable, Repr
 
   inductive Event :=
@@ -27,7 +37,9 @@ namespace PAM
     * the principal is repaid at the end of the last month
   !-/
   def pam_init : Contract :=
-    □ [[(T.ts { principal := 1000, interest_rate := 10, maturity := 12 })]]
+    □ [[T.ts { principal := { amount := 1000 }, interest_rate := { value := 10 }, maturity := Timestamp.t 12 }]]
+  def pam_monthly : Contract :=
+    ◯ [[T.e Event.InterestPayment]]
 
 end PAM
 
@@ -37,7 +49,6 @@ namespace SWAPS
     notional : Int
     fixed_rate : Int
     floating_rate : Int
-    maturity : UInt64
     deriving Repr, BEq, Hashable
 
   inductive Event :=
