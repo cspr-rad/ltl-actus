@@ -1,12 +1,12 @@
 import LtlActus.Types
 import LtlActus.Logic
 
-namespace Pam
+namespace PAM
 
   structure Terms where
-    principal : Money
-    interest_rate : Scalar
-    months : TimeDelta
+    principal : Int -- Money
+    interest_rate : Int -- Scalar
+    maturity : UInt64 -- Timestamp
     deriving BEq, Hashable, Repr
 
   inductive Event :=
@@ -19,9 +19,19 @@ namespace Pam
   | ts : Terms -> T
   | e : Event -> T
 
-end Pam
+  def Contract := LinearTemporalLogic.LTL T
 
-namespace Swap
+  /-! some properties of a pam execution:
+    * the principal is repaid at maturity
+    * the interest is paid at the end of each month
+    * the principal is repaid at the end of the last month
+  !-/
+  def pam_init : Contract :=
+    □ [[(T.ts { principal := 1000, interest_rate := 10, maturity := 12 })]]
+
+end PAM
+
+namespace SWAPS
 
   structure Terms where
     notional : Int
@@ -39,4 +49,6 @@ namespace Swap
   | ts : Terms -> T
   | e : Event -> T
 
-end Swap
+  def Contract := LinearTemporalLogic.LTL T
+
+end SWAPS

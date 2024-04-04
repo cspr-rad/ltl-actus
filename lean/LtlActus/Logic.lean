@@ -35,6 +35,42 @@ namespace LinearTemporalLogic
   notation φ "implies" ψ => implies φ ψ
   notation φ "R" ψ => release φ ψ
 
+  def mapLTL (f : α → β) : LTL α → LTL β
+    | ltt => ltt
+    | [[x]] => [[f x]]
+    | ~ p => ~ (mapLTL f p)
+    | p and q => (mapLTL f p) and (mapLTL f q)
+    | ◯ p => ◯ (mapLTL f p)
+    | p U q => (mapLTL f p) U (mapLTL f q)
+
+  instance : Functor LTL where
+    map := mapLTL
+
+  def seqLTL (f : LTL (α → β)) (x : Unit → LTL α) : LTL β :=
+    match f with
+    | ltt => ltt
+    | [[f]] => f <$> x ()
+    | ~ p => ~ (seqLTL p x)
+    | p and q => (seqLTL p x) and (seqLTL q x)
+    | ◯ p => ◯ (seqLTL p x)
+    | p U q => (seqLTL p x) U (seqLTL q x)
+
+  instance : Applicative LTL where
+    pure x := [[x]]
+    seq := seqLTL
+
+  def bindLTL (x : LTL α) (f : α → LTL β) : LTL β :=
+    match x with
+    | ltt => ltt
+    | [[x]] => f x
+    | ~ p => ~ (bindLTL p f)
+    | p and q => (bindLTL p f) and (bindLTL q f)
+    | ◯ p => ◯ (bindLTL p f)
+    | p U q => (bindLTL p f) U (bindLTL q f)
+
+  instance : Monad LTL where
+    bind := bindLTL
+
 end LinearTemporalLogic
 
 namespace LTLSemantics
