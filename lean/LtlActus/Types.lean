@@ -37,3 +37,9 @@ structure TimeDelta where
 
 def TimeDelta.map (f : UInt64 -> UInt64) (td : TimeDelta) : TimeDelta :=
   { dt := f td.dt }
+
+def Interval : Type := (Timestamp × Timestamp)
+deriving BEq, Hashable, Repr
+
+def Interval.map (f : Timestamp -> Timestamp) (i : Interval) : Interval :=
+  (f i.1, f i.2)

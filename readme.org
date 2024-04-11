@@ -1,5 +1,7 @@
 #+TITLE: LTL ACTUS
 
+* Repo abandoned, work moved to [[https://github.com/cspr-rad/mtl-actus][MTL ACTUS]]
+
 The [[https://actusfrf.org][algorithmic contract types unified standard]] executed in [[https://en.wikipedia.org/wiki/Linear_temporal_logic][linear temporal logic]]
 
 *Prototype*.
